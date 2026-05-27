@@ -18,6 +18,11 @@ namespace PortCheck.Services;
 [SupportedOSPlatform("windows")]
 public class PortScannerService
 {
+    private readonly bool _skipHeavyDockerProxyInfo;
+
+    public PortScannerService(bool skipHeavyDockerProxyInfo = true) =>
+        _skipHeavyDockerProxyInfo = skipHeavyDockerProxyInfo;
+
     // Win32 API imports for TCP table
     [DllImport("iphlpapi.dll", SetLastError = true)]
     private static extern uint GetExtendedTcpTable(
@@ -97,6 +102,14 @@ public class PortScannerService
     private const int AF_INET = 2;  // IPv4
     private const int AF_INET6 = 23; // IPv6
     private const uint MIB_TCP_STATE_LISTEN = 2;
+
+    private static readonly string[] DockerProxyProcessNames =
+    [
+        "com.docker.backend",
+        "docker-proxy",
+        "wslrelay",
+        "vpnkit"
+    ];
 
     /// <summary>
     /// Scans all listening TCP ports using Windows API.
@@ -319,7 +332,10 @@ public class PortScannerService
         {
             using var process = Process.GetProcessById(pid);
             var name = process.ProcessName;
-            
+
+            if (_skipHeavyDockerProxyInfo && IsDockerProxyProcess(name))
+                return (name, name, Environment.UserName);
+
             // Try to get full command line
             string command;
             try
@@ -412,4 +428,12 @@ public class PortScannerService
     [DllImport("kernel32.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool CloseHandle(IntPtr hObject);
+
+    private static bool IsDockerProxyProcess(string processName)
+    {
+        if (string.IsNullOrEmpty(processName))
+            return false;
+        var lower = processName.ToLowerInvariant();
+        return DockerProxyProcessNames.Any(lower.Contains);
+    }
 }

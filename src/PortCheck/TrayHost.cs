@@ -160,13 +160,14 @@ public sealed class TrayHost : IDisposable
 
     private async Task ShowKillAllFromTrayAsync()
     {
-        if (!_viewModel.Ports.Any())
+        if (!_viewModel.LocalPorts.Any(p => p.IsActive))
             return;
 
         ShowPopup();
 
+        var count = _viewModel.LocalPorts.Count(p => p.IsActive);
         var dialog = new ConfirmDialog(
-            $"Kill ALL {_viewModel.Ports.Count} active processes?",
+            $"Kill ALL {count} active processes?",
             "This will terminate all processes currently using ports.",
             "Kill All")
         {
@@ -175,7 +176,7 @@ public sealed class TrayHost : IDisposable
 
         dialog.ShowDialog();
         if (dialog.Result)
-            await _viewModel.KillAllCommand.ExecuteAsync(null);
+            await _viewModel.KillAllLocalCommand.ExecuteAsync(null);
     }
 
     public void PrepareShutdown()
@@ -214,7 +215,7 @@ public sealed class TrayHost : IDisposable
                 return extracted;
         }
 
-        throw new FileNotFoundException("App icon not found. Expected Assets\\AppIcon.ico beside the executable.");
+        return SystemIcons.Application;
     }
 
     public void Dispose()

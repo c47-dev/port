@@ -5,3 +5,8 @@ obj/
 *.suo
 PublishProfiles/
 _upstream/
+
+# Release / Publish artifacts
+artifacts/
+[Rr]elease/
+**/publish/

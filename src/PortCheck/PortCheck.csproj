@@ -4,6 +4,7 @@
     <TargetFramework>net8.0-windows</TargetFramework>
     <RuntimeIdentifiers>win-x64;win-arm64</RuntimeIdentifiers>
     <UseWPF>true</UseWPF>
+    <IncludeAllContentForSelfExtract>false</IncludeAllContentForSelfExtract>
     <RootNamespace>PortCheck</RootNamespace>
     <AssemblyName>PortCheck</AssemblyName>
     <ApplicationIcon>Assets\AppIcon.ico</ApplicationIcon>
@@ -29,9 +30,14 @@
   <ItemGroup>
     <None Update="appsettings.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
     </None>
     <Content Include="Assets\AppIcon.ico">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
     </Content>
+    <None Include="Assets\docker-icon-seeklogo.svg" />
   </ItemGroup>
 </Project>

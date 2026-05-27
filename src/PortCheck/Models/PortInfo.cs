@@ -56,6 +56,11 @@ public class PortInfo : INotifyPropertyChanged
     public bool IsActive { get; init; }
 
     /// <summary>
+    /// Set by view model when host port matches a Docker published mapping.
+    /// </summary>
+    public bool IsDockerPublished { get; set; }
+
+    /// <summary>
     /// UI State: Showing confirmation buttons
     /// </summary>
     public bool IsConfirmingKill

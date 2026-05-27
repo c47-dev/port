@@ -1,0 +1,18 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:helpers="clr-namespace:PortCheck.Helpers">
+
+    <!-- Blue Docker mark only — matches pane tab chip (no tile background). -->
+    <DataTemplate x:Key="DockerPortLeadingIcon">
+        <Viewbox Width="{StaticResource Glass.Metrics.DockerMarkWidth}"
+                 Height="{StaticResource Glass.Metrics.DockerMarkHeight}"
+                 Stretch="Uniform"
+                 HorizontalAlignment="Center" VerticalAlignment="Center"
+                 SnapsToDevicePixels="True" UseLayoutRounding="True"
+                 RenderOptions.BitmapScalingMode="HighQuality">
+            <Path Data="{x:Static helpers:DockerIconGeometry.Logo}"
+                  Fill="{StaticResource PaneTab.Docker.Accent}"/>
+        </Viewbox>
+    </DataTemplate>
+
+</ResourceDictionary>

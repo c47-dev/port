@@ -1,62 +1,54 @@
 {
-  "project": "PortCheck rebrand",
+  "project": "PortCheck Docker dual-pane",
   "stories": [
     {
-      "id": "US-R1",
-      "title": "Remove PortKiller docs outside docs/",
+      "id": "US-D1",
+      "title": "Phase 1 — Update product spec",
       "priority": 1,
       "passes": true,
       "acceptanceCriteria": [
-        "CLAUDE.md and AGENTS.md deleted",
-        "_upstream/ directory removed",
-        "rg PortKiller on repo root (excluding docs/) returns no matches in .md files except none",
-        "progress.txt and prd.json reference PortCheck only"
+        "docs/spec/portcheck.md documents Local Port and Docker Port surfaces",
+        "Spec states Docker segment hidden when Engine unavailable OR zero published TCP (OQ-6)",
+        "Spec states PortCheck never starts Docker; Docker Kill = container stop; Kill All only in Local section",
+        "rg \"Docker is not available\" docs/spec returns no matches"
       ]
     },
     {
-      "id": "US-R2",
-      "title": "Rename project PortKiller → PortCheck",
+      "id": "US-D2",
+      "title": "Phase 2 — Services and ViewModel",
       "priority": 2,
       "passes": true,
       "acceptanceCriteria": [
-        "src/PortCheck/PortCheck.csproj and src/PortCheck.sln exist; src/PortKiller removed",
-        "RootNamespace and AssemblyName are PortCheck",
-        "All .cs/.xaml use namespace PortCheck; zero PortKiller in src/PortCheck",
-        "app.manifest and app.Debug.manifest use PortCheck.app identity"
+        "Models DockerPortInfo, HostListenSnapshot, PortPane exist",
+        "DockerEngineClient uses named pipe only (rg docker.exe src/PortCheck/Services returns no spawn of docker CLI)",
+        "TrayViewModel exposes LocalPorts, DockerPorts, Filtered*, IsDockerSurfaceVisible, ActivePane",
+        "IsDockerSurfaceVisible false when probe fails or catalog has zero published TCP rows",
+        "dotnet build -c Debug in src/PortCheck exits 0"
       ]
     },
     {
-      "id": "US-R3",
-      "title": "Application icon and tray icon",
+      "id": "US-D3",
+      "title": "Phase 3 — UI, kill flows, tray integration",
       "priority": 3,
       "passes": true,
       "acceptanceCriteria": [
-        "Assets/AppIcon.ico exists with 16/32/48/256 sizes",
-        "PortCheck.csproj sets ApplicationIcon to Assets/AppIcon.ico",
-        "TrayHost loads AppIcon.ico for TaskbarIcon (not procedural bitmap)",
-        "Published exe shows PortCheck icon in Explorer"
+        "TrayPopupWindow has Local Port / Docker Port segment; Docker segment Visibility bound to IsDockerSurfaceVisible",
+        "Kill All control is inside Local Port section; footer has Refresh and Hide only",
+        "Docker row shows port detail and Kill triggers KillContainerCommand",
+        "Local rows show Docker badge when IsDockerPublished",
+        "Compact row styles: GlassPortListItem Padding 8,3 and MinHeight 26 on local rows",
+        "dotnet build -c Debug in src/PortCheck exits 0"
       ]
     },
     {
-      "id": "US-R4",
-      "title": "README and UI strings",
+      "id": "US-D4",
+      "title": "Phase 3 — Verification",
       "priority": 4,
       "passes": true,
       "acceptanceCriteria": [
-        "README.md titles PortCheck with no PortKiller or upstream fork references",
-        "UI strings (tooltips, MessageBox titles, window Title) say PortCheck",
-        "rg PortKiller src/ returns zero matches"
-      ]
-    },
-    {
-      "id": "US-R5",
-      "title": "Release build",
-      "priority": 5,
-      "passes": true,
-      "acceptanceCriteria": [
-        "dotnet build -c Debug on src/PortCheck succeeds",
-        "dotnet publish -c Release -r win-x64 /p:PublishSingleFile=true outputs PortCheck.exe",
-        "publish folder contains PortCheck.exe and appsettings.json"
+        "dotnet build -c Release -r win-x64 in src/PortCheck exits 0",
+        "rg \"Docker is not available\" src/ returns no matches",
+        "docs/implementation-records/260527_docker-dual-pane-ports.md OQ-6 marked resolved: hide segment when zero publishes"
       ]
     }
   ]

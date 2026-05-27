@@ -1,3 +1,4 @@
+using System.IO;
 using System.Windows;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -43,22 +44,54 @@ public partial class App : Application
 
     private static void ConfigureServices(IServiceCollection services)
     {
-        services.AddSingleton<IConfiguration>(_ =>
-            new ConfigurationBuilder()
-                .SetBasePath(AppContext.BaseDirectory)
-                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-                .Build());
+        var configuration = BuildConfiguration();
+        services.AddSingleton<IConfiguration>(configuration);
 
-        services.AddSingleton<PortScannerService>();
+        var pipeName = configuration.GetValue("appSettings:dockerEnginePipeName", "docker_engine")!;
+        var engineTimeout = configuration.GetValue("appSettings:dockerEngineTimeoutMs", 2000);
+        var skipDockerProxy = configuration.GetValue("appSettings:skipHeavyProcessInfoForDockerProxy", true);
+
+        services.AddSingleton(_ => new DockerEngineClient(pipeName));
+        services.AddSingleton(sp => new DockerPortCatalogService(
+            sp.GetRequiredService<DockerEngineClient>(),
+            engineTimeout));
+        services.AddSingleton(sp => new DockerContainerStopService(
+            sp.GetRequiredService<DockerEngineClient>(),
+            engineTimeout));
+        services.AddSingleton(sp => new PortScannerService(skipDockerProxy));
         services.AddSingleton<ProcessKillerService>();
 
         services.AddSingleton<TrayViewModel>(sp => new TrayViewModel(
             sp.GetRequiredService<PortScannerService>(),
             sp.GetRequiredService<ProcessKillerService>(),
+            sp.GetRequiredService<DockerEngineClient>(),
+            sp.GetRequiredService<DockerPortCatalogService>(),
+            sp.GetRequiredService<DockerContainerStopService>(),
             sp.GetRequiredService<IConfiguration>(),
             Current.Dispatcher));
 
         services.AddSingleton<TrayHost>();
         services.AddSingleton<TrayPopupWindow>();
+    }
+
+    private static IConfiguration BuildConfiguration()
+    {
+        var builder = new ConfigurationBuilder()
+            .SetBasePath(AppContext.BaseDirectory)
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["appSettings:refreshIntervalSeconds"] = "5",
+                ["appSettings:dockerRefreshIntervalSeconds"] = "10",
+                ["appSettings:dockerEnginePipeName"] = "docker_engine",
+                ["appSettings:dockerCatalogEnabled"] = "true",
+                ["appSettings:dockerEngineTimeoutMs"] = "2000",
+                ["appSettings:dockerEngineProbeTimeoutMs"] = "400",
+                ["appSettings:skipHeavyProcessInfoForDockerProxy"] = "true"
+            });
+
+        if (File.Exists(Path.Combine(AppContext.BaseDirectory, "appsettings.json")))
+            builder.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+
+        return builder.Build();
     }
 }

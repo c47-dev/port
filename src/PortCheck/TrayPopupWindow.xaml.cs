@@ -14,6 +14,7 @@ public partial class TrayPopupWindow : Window
     private readonly TrayViewModel _viewModel;
     private bool _isProcessingAction;
     private bool _isManualRefresh;
+    private PortPane? _lastAnimatedPane;
 
     public TrayPopupWindow()
         : this(App.Services.GetRequiredService<TrayViewModel>())
@@ -31,13 +32,22 @@ public partial class TrayPopupWindow : Window
             _isManualRefresh = true;
             await _viewModel.RefreshPortsCommand.ExecuteAsync(null);
             _isManualRefresh = false;
-            UpdateEmptyState();
+            ApplyPaneVisibility(_viewModel.ActivePane);
+            FluidAnimation.SetPaneTabWidths(LocalPaneTabButton, DockerPaneTabButton, _viewModel.ActivePane);
+            _lastAnimatedPane = _viewModel.ActivePane;
+            UpdateSearchPlaceholder();
         };
 
         _viewModel.PropertyChanged += (_, e) =>
         {
-            if (e.PropertyName is nameof(TrayViewModel.FilteredPorts) or nameof(TrayViewModel.Ports))
-                Dispatcher.Invoke(UpdateEmptyState);
+            if (e.PropertyName == nameof(TrayViewModel.ActivePane))
+            {
+                Dispatcher.Invoke(() =>
+                {
+                    AnimatePaneChange(_viewModel.ActivePane);
+                    UpdateSearchPlaceholder();
+                });
+            }
 
             if (e.PropertyName == nameof(TrayViewModel.IsScanning))
             {
@@ -60,18 +70,64 @@ public partial class TrayPopupWindow : Window
         SetupInputBindings();
     }
 
+    private void PaneTab_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement element)
+            FluidAnimation.PopIcon(element);
+    }
+
+    private void AnimatePaneChange(PortPane pane)
+    {
+        if (_lastAnimatedPane == null)
+        {
+            ApplyPaneVisibility(pane);
+            FluidAnimation.SetPaneTabWidths(LocalPaneTabButton, DockerPaneTabButton, pane);
+            _lastAnimatedPane = pane;
+            return;
+        }
+
+        if (_lastAnimatedPane == pane)
+            return;
+
+        FluidAnimation.RunTabPush(LocalPaneTabButton, DockerPaneTabButton, pane);
+
+        var outgoing = _lastAnimatedPane == PortPane.Local ? LocalPortsList : DockerPortsList;
+        var incoming = pane == PortPane.Local ? LocalPortsList : DockerPortsList;
+        outgoing.Visibility = Visibility.Visible;
+        outgoing.Opacity = 1;
+        incoming.Visibility = Visibility.Visible;
+        incoming.Opacity = 0;
+        FluidAnimation.RunPaneCrossfade(outgoing, incoming, () => ApplyPaneVisibility(pane));
+        _lastAnimatedPane = pane;
+    }
+
+    private void ApplyPaneVisibility(PortPane pane)
+    {
+        var isLocal = pane == PortPane.Local;
+
+        LocalPortsList.BeginAnimation(UIElement.OpacityProperty, null);
+        DockerPortsList.BeginAnimation(UIElement.OpacityProperty, null);
+
+        LocalPortsList.Visibility = isLocal ? Visibility.Visible : Visibility.Collapsed;
+        DockerPortsList.Visibility = isLocal ? Visibility.Collapsed : Visibility.Visible;
+        LocalPortsList.Opacity = isLocal ? 1 : 0;
+        DockerPortsList.Opacity = isLocal ? 0 : 1;
+        LocalPortsList.RenderTransform = null;
+        DockerPortsList.RenderTransform = null;
+
+        ListHostGrid.InvalidateMeasure();
+    }
+
+    private void UpdateSearchPlaceholder() =>
+        SearchPlaceholder.Text = _viewModel.ActivePane == PortPane.Docker
+            ? "Search Docker ports…"
+            : "Search local ports…";
+
     private void SetupInputBindings()
     {
         InputBindings.Add(new KeyBinding(_viewModel.RefreshPortsCommand, Key.R, ModifierKeys.Control));
         InputBindings.Add(new KeyBinding(new RelayCommandWrapper(() => KillAllWithConfirm()), Key.K, ModifierKeys.Control));
         InputBindings.Add(new KeyBinding(new RelayCommandWrapper(HideToTray), Key.Escape, ModifierKeys.None));
-    }
-
-    private void UpdateEmptyState()
-    {
-        EmptyStateText.Visibility = _viewModel.FilteredPorts.Count == 0
-            ? Visibility.Visible
-            : Visibility.Collapsed;
     }
 
     public void ShowNearTray()
@@ -81,7 +137,6 @@ public partial class TrayPopupWindow : Window
         MaxHeight = maxWindowH;
         Height = maxWindowH;
 
-        // Position before capture so CopyFromScreen sees the desktop behind this rect
         UpdateLayout();
         Width = 340;
         Height = maxWindowH;
@@ -117,7 +172,7 @@ public partial class TrayPopupWindow : Window
         if (sender is not ListBox list)
             return;
 
-        var scrollViewer = FindVisualChild<System.Windows.Controls.ScrollViewer>(list);
+        var scrollViewer = FindVisualChild<ScrollViewer>(list);
         if (scrollViewer == null)
             return;
 
@@ -172,19 +227,44 @@ public partial class TrayPopupWindow : Window
             port.IsConfirmingKill = false;
     }
 
+    private void KillDockerPort_Click(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is Button { Tag: DockerPortInfo row })
+        {
+            e.Handled = true;
+            row.IsConfirmingKill = true;
+        }
+    }
+
+    private async void ConfirmDockerKill_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button { Tag: DockerPortInfo row })
+        {
+            row.IsConfirmingKill = false;
+            await _viewModel.KillContainerCommand.ExecuteAsync(row);
+        }
+    }
+
+    private void CancelDockerKill_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button { Tag: DockerPortInfo row })
+            row.IsConfirmingKill = false;
+    }
+
     private async void KillAll_Click(object sender, RoutedEventArgs e) => await KillAllWithConfirm();
 
     private async Task KillAllWithConfirm()
     {
-        if (!_viewModel.Ports.Any())
+        if (_viewModel.ActivePane != PortPane.Local || !_viewModel.LocalPorts.Any(p => p.IsActive))
             return;
 
         _isProcessingAction = true;
         try
         {
+            var count = _viewModel.LocalPorts.Count(p => p.IsActive);
             var dialog = new ConfirmDialog(
-                $"Kill ALL {_viewModel.Ports.Count} active processes?",
-                "This will terminate all processes currently using ports.",
+                $"Kill ALL {count} active processes?",
+                "This will terminate all processes currently using ports in the Local Port list.",
                 "Kill All")
             {
                 Owner = this
@@ -192,7 +272,7 @@ public partial class TrayPopupWindow : Window
 
             dialog.ShowDialog();
             if (dialog.Result)
-                await _viewModel.KillAllCommand.ExecuteAsync(null);
+                await _viewModel.KillAllLocalCommand.ExecuteAsync(null);
         }
         finally
         {
