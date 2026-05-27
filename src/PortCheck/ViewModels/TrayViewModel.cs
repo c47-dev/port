@@ -109,22 +109,24 @@ public partial class TrayViewModel : ObservableObject
                 return;
 
             var listen = HostListenSnapshot.FromPorts(localPorts);
-            IReadOnlyList<DockerPortInfo> dockerRows = Array.Empty<DockerPortInfo>();
+            IReadOnlyList<DockerPortInfo> catalogRows = Array.Empty<DockerPortInfo>();
 
             if (_dockerCatalogEnabled)
-                dockerRows = await _dockerCatalog.FetchPublishedTcpAsync(listen, ct);
+                catalogRows = await _dockerCatalog.FetchPublishedTcpAsync(listen, ct);
 
+            var inferredRows = BuildInferredDockerRows(localPorts);
+            var dockerRows = MergeDockerRows(catalogRows, inferredRows);
             var dockerVisible = dockerRows.Count > 0;
 
             if (ct.IsCancellationRequested)
                 return;
 
-            var publishedHostPorts = dockerVisible
+            var dockerHostPorts = dockerVisible
                 ? dockerRows.Select(r => r.HostPort).ToHashSet()
                 : new HashSet<int>();
 
             foreach (var port in localPorts)
-                port.IsDockerPublished = publishedHostPorts.Contains(port.Port);
+                port.IsDockerPublished = dockerHostPorts.Contains(port.Port);
 
             var switchToLocal = ActivePane == PortPane.Docker && !dockerVisible;
 
@@ -137,7 +139,7 @@ public partial class TrayViewModel : ObservableObject
                     PreserveLocalRowState);
                 ReconcileCollection(
                     DockerPorts,
-                    dockerVisible ? dockerRows : Array.Empty<DockerPortInfo>(),
+                    dockerRows,
                     row => (row.ContainerId, row.HostPort, row.ContainerPort, row.HostAddress, row.Protocol),
                     PreserveDockerRowState);
                 IsDockerSurfaceVisible = dockerVisible;
@@ -204,7 +206,7 @@ public partial class TrayViewModel : ObservableObject
     [RelayCommand]
     public async Task KillContainerAsync(DockerPortInfo? row)
     {
-        if (row == null || string.IsNullOrEmpty(row.ContainerId))
+        if (row == null || !row.IsKillSupported)
             return;
 
         try
@@ -280,6 +282,7 @@ public partial class TrayViewModel : ObservableObject
                 dockerSource = dockerSource.Where(p =>
                     p.HostPort.ToString().Contains(q, StringComparison.Ordinal) ||
                     p.ContainerPort.ToString().Contains(q, StringComparison.Ordinal) ||
+                    (p.HostAddress?.Contains(q, StringComparison.OrdinalIgnoreCase) ?? false) ||
                     (p.ContainerName?.Contains(q, StringComparison.OrdinalIgnoreCase) ?? false) ||
                     (p.ComposeProject?.Contains(q, StringComparison.OrdinalIgnoreCase) ?? false) ||
                     (p.ComposeService?.Contains(q, StringComparison.OrdinalIgnoreCase) ?? false) ||
@@ -309,6 +312,48 @@ public partial class TrayViewModel : ObservableObject
             port => (port.Pid, port.Port, port.Address));
         OnPropertyChanged(nameof(LocalPortCount));
         OnPropertyChanged(nameof(ActivePanePortCount));
+    }
+
+    private static List<DockerPortInfo> BuildInferredDockerRows(IReadOnlyList<PortInfo> localPorts)
+    {
+        return localPorts
+            .Where(port => PortScannerService.IsDockerRelatedProcess(port.ProcessName))
+            .Select(port => new DockerPortInfo
+            {
+                ContainerId = $"inferred:{port.Pid}:{port.Port}:{port.Address}",
+                ContainerName = port.ProcessName,
+                HostPort = port.Port,
+                ContainerPort = port.Port,
+                Protocol = "tcp",
+                HostAddress = port.Address,
+                IsHostListening = true,
+                IsInferred = true,
+                SourcePid = port.Pid
+            })
+            .OrderBy(row => row.HostPort)
+            .ThenBy(row => row.HostAddress, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    private static IReadOnlyList<DockerPortInfo> MergeDockerRows(
+        IReadOnlyList<DockerPortInfo> catalogRows,
+        IReadOnlyList<DockerPortInfo> inferredRows)
+    {
+        if (catalogRows.Count == 0)
+            return inferredRows;
+        if (inferredRows.Count == 0)
+            return catalogRows;
+
+        var merged = new Dictionary<(int HostPort, string HostAddress, string Protocol), DockerPortInfo>();
+        foreach (var row in inferredRows)
+            merged[(row.HostPort, row.HostAddress, row.Protocol)] = row;
+        foreach (var row in catalogRows)
+            merged[(row.HostPort, row.HostAddress, row.Protocol)] = row;
+
+        return merged.Values
+            .OrderBy(row => row.HostPort)
+            .ThenBy(row => row.HostAddress, StringComparer.OrdinalIgnoreCase)
+            .ToList();
     }
 
     private static void ReconcileCollection<TItem, TKey>(

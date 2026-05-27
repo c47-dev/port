@@ -49,14 +49,19 @@ public partial class App : Application
 
         var pipeName = configuration.GetValue("appSettings:dockerEnginePipeName", "docker_engine")!;
         var engineTimeout = configuration.GetValue("appSettings:dockerEngineTimeoutMs", 2000);
+        var cliTimeout = configuration.GetValue("appSettings:dockerCliTimeoutMs", 5000);
+        var cliDistribution = configuration.GetValue<string?>("appSettings:dockerCliWslDistribution");
         var skipDockerProxy = configuration.GetValue("appSettings:skipHeavyProcessInfoForDockerProxy", true);
 
         services.AddSingleton(_ => new DockerEngineClient(pipeName));
+        services.AddSingleton(_ => new DockerWslCliClient(cliDistribution, cliTimeout));
         services.AddSingleton(sp => new DockerPortCatalogService(
             sp.GetRequiredService<DockerEngineClient>(),
+            sp.GetRequiredService<DockerWslCliClient>(),
             engineTimeout));
         services.AddSingleton(sp => new DockerContainerStopService(
             sp.GetRequiredService<DockerEngineClient>(),
+            sp.GetRequiredService<DockerWslCliClient>(),
             engineTimeout));
         services.AddSingleton(sp => new PortScannerService(skipDockerProxy));
         services.AddSingleton<ProcessKillerService>();
@@ -84,6 +89,8 @@ public partial class App : Application
                 ["appSettings:dockerEnginePipeName"] = "docker_engine",
                 ["appSettings:dockerCatalogEnabled"] = "true",
                 ["appSettings:dockerEngineTimeoutMs"] = "2000",
+                ["appSettings:dockerCliTimeoutMs"] = "5000",
+                ["appSettings:dockerCliWslDistribution"] = "",
                 ["appSettings:dockerEngineProbeTimeoutMs"] = "400",
                 ["appSettings:skipHeavyProcessInfoForDockerProxy"] = "true"
             });

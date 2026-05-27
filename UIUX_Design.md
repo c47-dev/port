@@ -31,6 +31,8 @@
 | **Search/Header Bar** | Inset capsule with subtle inner shadow. Muted opacities until active. |
 | **Status Indicators** | Vibrant, high-saturation markers on a neutral glass stage — not flat text badges. |
 | **Interactive Rows** | Hover uses internal glow / step-up illumination, not solid blocks. |
+| **Action Foundation** | `Kill All`, `Refresh`, `Hide` define the canonical liquid glass control language: compact, borderless-looking, crisp icon/text alignment, soft hover illumination, no hard chip outline. |
+| **Port List Surface** | Derive from the action foundation's material physics, but remain a lighter content surface with its own padding, reflection, and radius; do not make rows look like footer menu chips. |
 | **Alignment** | Icon + shortcut columns align across surfaces; **do not** reuse the same corner radius / row height on list rows vs footer menu chips. |
 | **Action Items & Alerts** | Destructive actions use focused high-contrast text; avoid full-width solid warning fills. |
 
@@ -106,6 +108,17 @@ withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) { selectedCategory
 Mirrors Mail list leading squares: one recognizable icon slot per row, no duplicate badge + dot.
 
 **WPF:** `DockerPortLeadingIcon` data template; `DataTrigger` on `IsDockerPublished` swaps dot for tile.
+
+---
+
+## Action Foundation Clarification
+
+- `Kill All`, `Refresh`, and `Hide` are the canonical liquid glass action foundation for this popup.
+- `Port list` rows derive their material logic from that foundation, but remain a lighter content plane with their own padding, reflection, and corner radius.
+- In the idle state, `Port list` rows do **not** render as independent glass chips, bordered cards, or per-row translucent capsules. The shared popup bubble is the only persistent material container.
+- Per-row glass surface appears only on hover, selection, confirm, or explicit row action reveal.
+- Inline row `Kill` and dismiss `X` controls must be crisp, centered, and borderless in appearance; do not use rough text-glyph crosses or visible hard borders.
+- `Search bar` and pane `tabs` are separate UI systems and must not be used as the visual foundation for row or footer actions.
 
 ---
 

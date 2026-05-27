@@ -26,12 +26,19 @@
     <SolidColorBrush x:Key="PaneTab.Local.RowHover.Stroke" Color="#82FFFFFF"/>
     <SolidColorBrush x:Key="PaneTab.Docker.RowHover.Fill" Color="#261D63ED"/>
     <SolidColorBrush x:Key="PaneTab.Docker.RowHover.Stroke" Color="#6F74B0FF"/>
-    <SolidColorBrush x:Key="Glass.Action.Ghost.Fill" Color="#26FFFFFF"/>
-    <SolidColorBrush x:Key="Glass.Action.Ghost.HoverFill" Color="#48FFFFFF"/>
+    <SolidColorBrush x:Key="Glass.Action.Ghost.Fill" Color="#32FFFFFF"/>
+    <SolidColorBrush x:Key="Glass.Action.Ghost.HoverFill" Color="#58FFFFFF"/>
     <SolidColorBrush x:Key="Glass.Action.Ghost.Stroke" Color="#66FFFFFF"/>
-    <SolidColorBrush x:Key="Glass.Action.Danger.Fill" Color="#28FF453A"/>
-    <SolidColorBrush x:Key="Glass.Action.Danger.HoverFill" Color="#52FF453A"/>
+    <SolidColorBrush x:Key="Glass.Action.Danger.Fill" Color="#3CFF5C4F"/>
+    <SolidColorBrush x:Key="Glass.Action.Danger.HoverFill" Color="#62FF6A5E"/>
     <SolidColorBrush x:Key="Glass.Action.Danger.Stroke" Color="#8FFF8A84"/>
+    <SolidColorBrush x:Key="Glass.List.Surface.Fill" Color="#12FFFFFF"/>
+    <SolidColorBrush x:Key="Glass.List.Surface.Border" Color="#1FFFFFFF"/>
+    <SolidColorBrush x:Key="Glass.List.Surface.Highlight" Color="#30FFFFFF"/>
+    <SolidColorBrush x:Key="Glass.List.Surface.LocalHover" Color="#22FFFFFF"/>
+    <SolidColorBrush x:Key="Glass.List.Surface.DockerHover" Color="#1B9FC4FF"/>
+    <SolidColorBrush x:Key="Glass.List.Surface.LocalBorderHover" Color="#50FFFFFF"/>
+    <SolidColorBrush x:Key="Glass.List.Surface.DockerBorderHover" Color="#4E8FC6FF"/>
 
     <!-- Alignment grid: columns line up; each surface keeps its own radius / padding / height. -->
     <system:Double x:Key="Glass.Align.ContentInset" xmlns:system="clr-namespace:System;assembly=mscorlib">12</system:Double>
@@ -50,9 +57,10 @@
     <Thickness x:Key="Glass.Metrics.TabLabelTrailing">0,0,8,0</Thickness>
 
     <Thickness x:Key="Glass.Metrics.ListItemPadding">6,2</Thickness>
-    <CornerRadius x:Key="Glass.Metrics.ListHoverRadius">8</CornerRadius>
+    <CornerRadius x:Key="Glass.Metrics.ListHoverRadius">10</CornerRadius>
     <system:Double x:Key="Glass.Metrics.RowMinHeight" xmlns:system="clr-namespace:System;assembly=mscorlib">26</system:Double>
     <system:Double x:Key="Glass.Metrics.RowLeading" xmlns:system="clr-namespace:System;assembly=mscorlib">20</system:Double>
+    <Thickness x:Key="Glass.Metrics.ListSurfaceInset">0,0,0,1</Thickness>
 
     <Thickness x:Key="Glass.Metrics.FooterContentPadding">6,2</Thickness>
     <Thickness x:Key="Glass.Metrics.FooterRowSpacing">0</Thickness>
@@ -64,6 +72,9 @@
     <system:Double x:Key="Glass.Metrics.DockerMarkHeight" xmlns:system="clr-namespace:System;assembly=mscorlib">12</system:Double>
     <system:Double x:Key="Glass.Metrics.KillButton" xmlns:system="clr-namespace:System;assembly=mscorlib">20</system:Double>
     <CornerRadius x:Key="Glass.Metrics.KillCornerRadius">10</CornerRadius>
+    <system:Double x:Key="Glass.Metrics.KillLabelHeight" xmlns:system="clr-namespace:System;assembly=mscorlib">22</system:Double>
+    <CornerRadius x:Key="Glass.Metrics.KillLabelCornerRadius">11</CornerRadius>
+    <Geometry x:Key="Glass.Icon.CrossGeometry">M 4.5,4.5 L 11.5,11.5 M 11.5,4.5 L 4.5,11.5</Geometry>
 
     <!-- Soft rim: weaker top-left highlight (top was too harsh vs bottom) -->
     <LinearGradientBrush x:Key="Glass.RimLight" StartPoint="0.5,0" EndPoint="0.5,1">
@@ -366,14 +377,18 @@
     </Style>
 
     <Style x:Key="GlassRowKillButtonExtracted" TargetType="Button" BasedOn="{StaticResource GlassRowKillButton}">
+        <Setter Property="Height" Value="{StaticResource Glass.Metrics.KillLabelHeight}"/>
+        <Setter Property="MinWidth" Value="42"/>
+        <Setter Property="Padding" Value="12,0"/>
+        <Setter Property="Foreground" Value="#FFFDFDFD"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
                     <Border x:Name="Bd"
                             Background="{StaticResource Glass.Action.Danger.Fill}"
-                            BorderBrush="{StaticResource Glass.Action.Danger.Stroke}"
-                            BorderThickness="1"
-                            CornerRadius="11"
+                            BorderBrush="Transparent"
+                            BorderThickness="0"
+                            CornerRadius="{StaticResource Glass.Metrics.KillLabelCornerRadius}"
                             Padding="{TemplateBinding Padding}"
                             SnapsToDevicePixels="True">
                         <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
@@ -381,7 +396,6 @@
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="Bd" Property="Background" Value="{StaticResource Glass.Action.Danger.HoverFill}"/>
-                            <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource Danger}"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -392,27 +406,36 @@
     <Style x:Key="GlassRowKillIconButtonExtracted" TargetType="Button">
         <Setter Property="Width" Value="{StaticResource Glass.Metrics.KillButton}"/>
         <Setter Property="Height" Value="{StaticResource Glass.Metrics.KillButton}"/>
-        <Setter Property="Foreground" Value="White"/>
-        <Setter Property="FontSize" Value="10"/>
-        <Setter Property="FontWeight" Value="SemiBold"/>
-        <Setter Property="Background" Value="{StaticResource Danger}"/>
+        <Setter Property="Background" Value="{StaticResource Glass.Action.Danger.Fill}"/>
         <Setter Property="BorderThickness" Value="0"/>
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
-                    <Border x:Name="Bd"
-                            Background="{StaticResource Glass.Action.Danger.Fill}"
-                            BorderBrush="{StaticResource Glass.Action.Danger.Stroke}"
-                            BorderThickness="1"
-                            CornerRadius="{StaticResource Glass.Metrics.KillCornerRadius}"
-                            SnapsToDevicePixels="True">
-                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                    </Border>
+                    <Grid Width="{TemplateBinding Width}"
+                          Height="{TemplateBinding Height}"
+                          SnapsToDevicePixels="True"
+                          UseLayoutRounding="True">
+                        <Border x:Name="Bd"
+                                Background="{TemplateBinding Background}"
+                                BorderThickness="0"
+                                CornerRadius="999"/>
+                        <Path Data="M0,0 L8,8 M8,0 L0,8"
+                              Width="8"
+                              Height="8"
+                              Stretch="None"
+                              HorizontalAlignment="Center"
+                              VerticalAlignment="Center"
+                              Stroke="#FFFDFDFD"
+                              StrokeThickness="1.8"
+                              StrokeStartLineCap="Round"
+                              StrokeEndLineCap="Round"
+                              StrokeLineJoin="Round"
+                              SnapsToDevicePixels="True"/>
+                    </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="Bd" Property="Background" Value="{StaticResource Glass.Action.Danger.HoverFill}"/>
-                            <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource Danger}"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -421,21 +444,36 @@
     </Style>
 
     <Style x:Key="GlassRowDismissButtonExtracted" TargetType="Button" BasedOn="{StaticResource GlassRowDismissButton}">
+        <Setter Property="Width" Value="{StaticResource Glass.Metrics.KillButton}"/>
+        <Setter Property="Height" Value="{StaticResource Glass.Metrics.KillButton}"/>
+        <Setter Property="Background" Value="{StaticResource Glass.Action.Ghost.Fill}"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
-                    <Border x:Name="Bd"
-                            Background="{StaticResource Glass.Action.Ghost.Fill}"
-                            BorderBrush="{StaticResource Glass.Action.Ghost.Stroke}"
-                            BorderThickness="1"
-                            CornerRadius="11"
-                            SnapsToDevicePixels="True">
-                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                    </Border>
+                    <Grid Width="{TemplateBinding Width}"
+                          Height="{TemplateBinding Height}"
+                          SnapsToDevicePixels="True"
+                          UseLayoutRounding="True">
+                        <Border x:Name="Bd"
+                                Background="{TemplateBinding Background}"
+                                BorderThickness="0"
+                                CornerRadius="999"/>
+                        <Path Data="M0,0 L8,8 M8,0 L0,8"
+                              Width="8"
+                              Height="8"
+                              Stretch="None"
+                              HorizontalAlignment="Center"
+                              VerticalAlignment="Center"
+                              Stroke="#FFFDFDFD"
+                              StrokeThickness="1.8"
+                              StrokeStartLineCap="Round"
+                              StrokeEndLineCap="Round"
+                              StrokeLineJoin="Round"
+                              SnapsToDevicePixels="True"/>
+                    </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="Bd" Property="Background" Value="{StaticResource Glass.Action.Ghost.HoverFill}"/>
-                            <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource PaneTab.Active.Stroke}"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -556,26 +594,57 @@
     <Style x:Key="GlassPortListItem" TargetType="ListBoxItem">
         <Setter Property="Background" Value="Transparent"/>
         <Setter Property="BorderThickness" Value="0"/>
-        <Setter Property="Padding" Value="{StaticResource Glass.Metrics.ListItemPadding}"/>
+        <Setter Property="Padding" Value="8,4"/>
         <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-        <Setter Property="Margin" Value="0,0,0,1"/>
+        <Setter Property="Margin" Value="0,0,0,2"/>
         <Setter Property="MinHeight" Value="{StaticResource Glass.Metrics.RowMinHeight}"/>
         <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ListBoxItem">
-                    <Border x:Name="Bd" Background="Transparent"
-                            Padding="{TemplateBinding Padding}"
-                            CornerRadius="{StaticResource Glass.Metrics.ListHoverRadius}"
-                            ClipToBounds="False">
-                        <ContentPresenter/>
-                    </Border>
+                    <Grid SnapsToDevicePixels="True">
+                        <Border x:Name="Bd"
+                                Background="Transparent"
+                                BorderBrush="Transparent"
+                                BorderThickness="1"
+                                Padding="{TemplateBinding Padding}"
+                                CornerRadius="{StaticResource Glass.Metrics.ListHoverRadius}"
+                                Margin="{StaticResource Glass.Metrics.ListSurfaceInset}"
+                                ClipToBounds="True">
+                            <ContentPresenter/>
+                        </Border>
+                        <Border x:Name="Reflection"
+                                CornerRadius="{StaticResource Glass.Metrics.ListHoverRadius}"
+                                Margin="{StaticResource Glass.Metrics.ListSurfaceInset}"
+                                BorderThickness="0"
+                                IsHitTestVisible="False"
+                                Opacity="0">
+                            <Border.Background>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                    <GradientStop Offset="0" Color="#16FFFFFF"/>
+                                    <GradientStop Offset="0.2" Color="#08FFFFFF"/>
+                                    <GradientStop Offset="0.55" Color="#00FFFFFF"/>
+                                </LinearGradientBrush>
+                            </Border.Background>
+                            <Border.OpacityMask>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                    <GradientStop Offset="0" Color="#D0FFFFFF"/>
+                                    <GradientStop Offset="0.45" Color="#50FFFFFF"/>
+                                    <GradientStop Offset="1" Color="#00FFFFFF"/>
+                                </LinearGradientBrush>
+                            </Border.OpacityMask>
+                        </Border>
+                    </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Bd" Property="Background" Value="#1AFFFFFF"/>
+                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource Glass.List.Surface.Fill}"/>
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource Glass.List.Surface.Border}"/>
+                            <Setter TargetName="Reflection" Property="Opacity" Value="1"/>
                         </Trigger>
                         <Trigger Property="IsSelected" Value="True">
-                            <Setter TargetName="Bd" Property="Background" Value="#1AFFFFFF"/>
+                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource Glass.List.Surface.Fill}"/>
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource Glass.List.Surface.Border}"/>
+                            <Setter TargetName="Reflection" Property="Opacity" Value="1"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -587,24 +656,30 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ListBoxItem">
-                    <Border x:Name="Bd"
-                            Background="Transparent"
-                            BorderBrush="Transparent"
-                            BorderThickness="1"
-                            Padding="{TemplateBinding Padding}"
-                            CornerRadius="{StaticResource Glass.Metrics.ListHoverRadius}"
-                            ClipToBounds="False"
-                            SnapsToDevicePixels="True">
-                        <ContentPresenter/>
-                    </Border>
+                    <Grid SnapsToDevicePixels="True">
+                        <Border x:Name="Bd"
+                                Background="Transparent"
+                                BorderBrush="Transparent"
+                                BorderThickness="0"
+                                Padding="{TemplateBinding Padding}"
+                                CornerRadius="{StaticResource Glass.Metrics.ListHoverRadius}"
+                                ClipToBounds="True"
+                                Margin="{StaticResource Glass.Metrics.ListSurfaceInset}">
+                            <ContentPresenter/>
+                        </Border>
+                    </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource PaneTab.Local.RowHover.Fill}"/>
-                            <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource PaneTab.Local.RowHover.Stroke}"/>
+                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource Hover.Surface}"/>
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="Transparent"/>
                         </Trigger>
+                        <DataTrigger Binding="{Binding IsConfirmingKill}" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="Transparent"/>
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="Transparent"/>
+                        </DataTrigger>
                         <Trigger Property="IsSelected" Value="True">
-                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource PaneTab.Active.Fill}"/>
-                            <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource PaneTab.Active.Stroke}"/>
+                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource Hover.Surface}"/>
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="Transparent"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -616,24 +691,30 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ListBoxItem">
-                    <Border x:Name="Bd"
-                            Background="Transparent"
-                            BorderBrush="Transparent"
-                            BorderThickness="1"
-                            Padding="{TemplateBinding Padding}"
-                            CornerRadius="{StaticResource Glass.Metrics.ListHoverRadius}"
-                            ClipToBounds="False"
-                            SnapsToDevicePixels="True">
-                        <ContentPresenter/>
-                    </Border>
+                    <Grid SnapsToDevicePixels="True">
+                        <Border x:Name="Bd"
+                                Background="Transparent"
+                                BorderBrush="Transparent"
+                                BorderThickness="0"
+                                Padding="{TemplateBinding Padding}"
+                                CornerRadius="{StaticResource Glass.Metrics.ListHoverRadius}"
+                                ClipToBounds="True"
+                                Margin="{StaticResource Glass.Metrics.ListSurfaceInset}">
+                            <ContentPresenter/>
+                        </Border>
+                    </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource PaneTab.Docker.RowHover.Fill}"/>
-                            <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource PaneTab.Docker.RowHover.Stroke}"/>
+                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource Hover.Surface}"/>
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="Transparent"/>
                         </Trigger>
+                        <DataTrigger Binding="{Binding IsConfirmingKill}" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="Transparent"/>
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="Transparent"/>
+                        </DataTrigger>
                         <Trigger Property="IsSelected" Value="True">
-                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource PaneTab.Docker.RowHover.Fill}"/>
-                            <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource PaneTab.Docker.RowHover.Stroke}"/>
+                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource Hover.Surface}"/>
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="Transparent"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

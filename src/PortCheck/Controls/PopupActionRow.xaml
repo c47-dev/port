@@ -1,0 +1,26 @@
+<UserControl x:Class="PortCheck.Controls.PopupActionRow"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Name="Root"
+             IsHitTestVisible="False">
+    <Grid Style="{StaticResource GlassCompactRowGrid}">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="{StaticResource Glass.Align.IconColumn}"/>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="{StaticResource Glass.Align.ShortcutColumn}"/>
+        </Grid.ColumnDefinitions>
+        <TextBlock Grid.Column="0"
+                   Text="{Binding IconText, ElementName=Root}"
+                   FontFamily="Segoe Fluent Icons"
+                   Style="{StaticResource GlassFooterIcon}"
+                   Foreground="{Binding IconForeground, ElementName=Root}"/>
+        <TextBlock Grid.Column="1"
+                   Text="{Binding LabelText, ElementName=Root}"
+                   Style="{StaticResource GlassFooterLabel}"
+                   Foreground="{Binding LabelForeground, ElementName=Root}"
+                   Margin="8,0,0,0"/>
+        <TextBlock Grid.Column="2"
+                   Text="{Binding ShortcutText, ElementName=Root}"
+                   Style="{StaticResource GlassFooterShortcut}"/>
+    </Grid>
+</UserControl>

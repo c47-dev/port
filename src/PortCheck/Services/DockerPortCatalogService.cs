@@ -9,6 +9,7 @@ namespace PortCheck.Services;
 public sealed class DockerPortCatalogService
 {
     private readonly DockerEngineClient _client;
+    private readonly DockerWslCliClient _wslCli;
     private readonly int _timeoutMs;
 
     private static readonly JsonSerializerOptions JsonOptions = new()
@@ -16,9 +17,10 @@ public sealed class DockerPortCatalogService
         PropertyNameCaseInsensitive = true
     };
 
-    public DockerPortCatalogService(DockerEngineClient client, int timeoutMs)
+    public DockerPortCatalogService(DockerEngineClient client, DockerWslCliClient wslCli, int timeoutMs)
     {
         _client = client;
+        _wslCli = wslCli;
         _timeoutMs = timeoutMs;
     }
 
@@ -26,9 +28,22 @@ public sealed class DockerPortCatalogService
         HostListenSnapshot listen,
         CancellationToken cancellationToken)
     {
-        var json = await _client.GetAsync("/containers/json?all=false", _timeoutMs, cancellationToken);
+        string? json;
+        try
+        {
+            json = await _client.GetAsync("/containers/json?all=false", _timeoutMs, cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch
+        {
+            return await _wslCli.FetchPublishedTcpAsync(listen, cancellationToken);
+        }
+
         if (string.IsNullOrWhiteSpace(json))
-            return Array.Empty<DockerPortInfo>();
+            return await _wslCli.FetchPublishedTcpAsync(listen, cancellationToken);
 
         DockerContainerDto[]? containers;
         try
@@ -37,11 +52,11 @@ public sealed class DockerPortCatalogService
         }
         catch
         {
-            return Array.Empty<DockerPortInfo>();
+            return await _wslCli.FetchPublishedTcpAsync(listen, cancellationToken);
         }
 
         if (containers == null || containers.Length == 0)
-            return Array.Empty<DockerPortInfo>();
+            return await _wslCli.FetchPublishedTcpAsync(listen, cancellationToken);
 
         var rows = new List<DockerPortInfo>();
         foreach (var container in containers)
@@ -73,6 +88,9 @@ public sealed class DockerPortCatalogService
                     port.PrivatePort, type, string.IsNullOrEmpty(port.Ip) ? "0.0.0.0" : port.Ip, listen));
             }
         }
+
+        if (rows.Count == 0)
+            return await _wslCli.FetchPublishedTcpAsync(listen, cancellationToken);
 
         return rows
             .OrderBy(r => r.HostPort)

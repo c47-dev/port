@@ -95,3 +95,4 @@ Corrected future behavior:
 - if a downstream request times out, inspect the first failing downstream boundary instead of rewriting already-proven upstream code
 - if a model or external dependency fails, classify it as a downstream runtime failure rather than misattributing it to the browser-facing layer
 - if browser QA fails after an earlier step passed, inspect the actual visible state and selector path before assuming an API failure
+- for PortCheck popup validation, empty-state evidence is insufficient unless the change explicitly targets empty-state behavior; validation must confirm at least one real local listening port is present in the rendered UI before delivery

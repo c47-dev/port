@@ -64,14 +64,6 @@ public class PortScannerService
         public string LocalAddress => new System.Net.IPAddress(localAddr).ToString();
     }
 
-    [StructLayout(LayoutKind.Sequential)]
-    private struct MIB_TCPTABLE_OWNER_PID
-    {
-        public uint dwNumEntries;
-        [MarshalAs(UnmanagedType.ByValArray, ArraySubType = UnmanagedType.Struct, SizeConst = 1)]
-        public MIB_TCPROW_OWNER_PID[] table;
-    }
-
     // IPv6 structures
     [StructLayout(LayoutKind.Sequential)]
     private struct MIB_TCP6ROW_OWNER_PID
@@ -227,10 +219,10 @@ public class PortScannerService
             if (result != 0)
                 return tcpRows;
 
-            var table = Marshal.PtrToStructure<MIB_TCPTABLE_OWNER_PID>(tcpTablePtr);
-            var rowPtr = (IntPtr)((long)tcpTablePtr + Marshal.SizeOf(table.dwNumEntries));
+            var numEntries = Marshal.ReadInt32(tcpTablePtr);
+            var rowPtr = (IntPtr)((long)tcpTablePtr + sizeof(int));
 
-            for (int i = 0; i < table.dwNumEntries; i++)
+            for (int i = 0; i < numEntries; i++)
             {
                 var row = Marshal.PtrToStructure<MIB_TCPROW_OWNER_PID>(rowPtr);
                 tcpRows.Add(row);
@@ -317,7 +309,7 @@ public class PortScannerService
 
             var name = process.ProcessName;
 
-            if (_skipHeavyDockerProxyInfo && IsDockerProxyProcess(name))
+            if (_skipHeavyDockerProxyInfo && IsDockerRelatedProcess(name))
             {
                 var dockerProxy = (name, name, _currentUser);
                 CacheProcessInfo(pid, startedAtTicks, dockerProxy);
@@ -419,7 +411,7 @@ public class PortScannerService
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool CloseHandle(IntPtr hObject);
 
-    private static bool IsDockerProxyProcess(string processName)
+    public static bool IsDockerRelatedProcess(string processName)
     {
         if (string.IsNullOrEmpty(processName))
             return false;

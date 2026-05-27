@@ -61,10 +61,10 @@ public partial class TrayPopupWindow : Window
                         return;
 
                     if (_viewModel.IsScanning)
-                        RefreshStatusText.Text = "Refreshing...";
+                        RefreshActionRow.LabelText = "Refreshing...";
                     else
                     {
-                        RefreshStatusText.Text = "Refreshed";
+                        RefreshActionRow.LabelText = "Refreshed";
                         _isManualRefresh = false;
                     }
                 });
@@ -236,54 +236,6 @@ public partial class TrayPopupWindow : Window
         HideToTray();
     }
 
-    private void KillSinglePort_Click(object sender, MouseButtonEventArgs e)
-    {
-        if (sender is Button { Tag: PortInfo port })
-        {
-            e.Handled = true;
-            port.IsConfirmingKill = true;
-        }
-    }
-
-    private async void ConfirmKill_Click(object sender, RoutedEventArgs e)
-    {
-        if (sender is Button { Tag: PortInfo port })
-        {
-            port.IsConfirmingKill = false;
-            await _viewModel.KillProcessCommand.ExecuteAsync(port);
-        }
-    }
-
-    private void CancelKill_Click(object sender, RoutedEventArgs e)
-    {
-        if (sender is Button { Tag: PortInfo port })
-            port.IsConfirmingKill = false;
-    }
-
-    private void KillDockerPort_Click(object sender, MouseButtonEventArgs e)
-    {
-        if (sender is Button { Tag: DockerPortInfo row })
-        {
-            e.Handled = true;
-            row.IsConfirmingKill = true;
-        }
-    }
-
-    private async void ConfirmDockerKill_Click(object sender, RoutedEventArgs e)
-    {
-        if (sender is Button { Tag: DockerPortInfo row })
-        {
-            row.IsConfirmingKill = false;
-            await _viewModel.KillContainerCommand.ExecuteAsync(row);
-        }
-    }
-
-    private void CancelDockerKill_Click(object sender, RoutedEventArgs e)
-    {
-        if (sender is Button { Tag: DockerPortInfo row })
-            row.IsConfirmingKill = false;
-    }
-
     private async void KillAll_Click(object sender, RoutedEventArgs e) => await KillAllWithConfirm();
 
     private async Task KillAllWithConfirm()
@@ -316,7 +268,7 @@ public partial class TrayPopupWindow : Window
     private async void RefreshButton_Click(object sender, RoutedEventArgs e)
     {
         _isManualRefresh = true;
-        RefreshStatusText.Text = "Refreshing...";
+        RefreshActionRow.LabelText = "Refreshing...";
         await _viewModel.RefreshPortsCommand.ExecuteAsync(null);
     }
 

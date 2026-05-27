@@ -20,25 +20,35 @@ public class DockerPortInfo : INotifyPropertyChanged
     public string Protocol { get; init; } = "tcp";
     public string HostAddress { get; init; } = string.Empty;
     public bool IsHostListening { get; init; }
+    public bool IsInferred { get; init; }
+    public int? SourcePid { get; init; }
+
+    public bool IsKillSupported => !IsInferred && !string.IsNullOrEmpty(ContainerId);
 
     public string ContainerIdShort =>
         ContainerId.Length > 12 ? ContainerId[..12] : ContainerId;
 
     public string DisplayHostPort => $":{HostPort}";
 
-    public string DisplayMapping => $"{HostPort} → {ContainerPort}/{Protocol}";
+    public string DisplayMapping => $"{HostPort} -> {ContainerPort}/{Protocol}";
 
     public string DisplayPortDetail
     {
         get
         {
+            if (IsInferred)
+            {
+                var source = SourcePid is int pid ? $"{ContainerName} PID {pid}" : ContainerName;
+                return $"{DisplayMapping} | {HostAddress} | inferred Docker listener | {source}";
+            }
+
             var compose = !string.IsNullOrEmpty(ComposeService)
                 ? string.IsNullOrEmpty(ComposeProject)
                     ? ComposeService
                     : $"{ComposeProject}/{ComposeService}"
                 : null;
-            var tail = compose != null ? $"{ContainerName} · {compose}" : ContainerName;
-            return $"{DisplayMapping} · {HostAddress} · {tail}";
+            var tail = compose != null ? $"{ContainerName} | {compose}" : ContainerName;
+            return $"{DisplayMapping} | {HostAddress} | {tail}";
         }
     }
 
