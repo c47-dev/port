@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 using System.Windows.Media.Animation;
 using Microsoft.Extensions.DependencyInjection;
 using PortCheck.Helpers;
@@ -15,6 +16,8 @@ public partial class TrayPopupWindow : Window
     private bool _isProcessingAction;
     private bool _isManualRefresh;
     private PortPane? _lastAnimatedPane;
+    private Rect? _cachedBackdropRect;
+    private ImageSource? _cachedBackdropImage;
 
     public TrayPopupWindow()
         : this(App.Services.GetRequiredService<TrayViewModel>())
@@ -29,13 +32,11 @@ public partial class TrayPopupWindow : Window
 
         Loaded += async (_, _) =>
         {
-            _isManualRefresh = true;
-            await _viewModel.RefreshPortsCommand.ExecuteAsync(null);
-            _isManualRefresh = false;
             ApplyPaneVisibility(_viewModel.ActivePane);
             FluidAnimation.SetPaneTabWidths(LocalPaneTabButton, DockerPaneTabButton, _viewModel.ActivePane);
             _lastAnimatedPane = _viewModel.ActivePane;
             UpdateSearchPlaceholder();
+            await Dispatcher.InvokeAsync(() => { });
         };
 
         _viewModel.PropertyChanged += (_, e) =>
@@ -164,7 +165,17 @@ public partial class TrayPopupWindow : Window
     private void UpdateBackdropBlur()
     {
         var rect = BackdropBlurHelper.GetDeviceRect(this);
-        BackdropImage.Source = BackdropBlurHelper.CaptureBlurredRegion(rect, blurRadius: 32, dimOpacity: 0.06);
+        if (_cachedBackdropRect.HasValue &&
+            _cachedBackdropImage != null &&
+            AreRectsEquivalent(_cachedBackdropRect.Value, rect))
+        {
+            BackdropImage.Source = _cachedBackdropImage;
+            return;
+        }
+
+        _cachedBackdropRect = rect;
+        _cachedBackdropImage = BackdropBlurHelper.CaptureBlurredRegion(rect, blurRadius: 32, dimOpacity: 0.06);
+        BackdropImage.Source = _cachedBackdropImage;
     }
 
     private void PortsList_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
@@ -325,5 +336,14 @@ public partial class TrayPopupWindow : Window
             else
                 _action();
         }
+    }
+
+    private static bool AreRectsEquivalent(Rect left, Rect right)
+    {
+        const double tolerance = 1;
+        return Math.Abs(left.X - right.X) < tolerance &&
+               Math.Abs(left.Y - right.Y) < tolerance &&
+               Math.Abs(left.Width - right.Width) < tolerance &&
+               Math.Abs(left.Height - right.Height) < tolerance;
     }
 }

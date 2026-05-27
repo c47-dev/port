@@ -62,40 +62,40 @@ public class ProcessKillerService
     /// </summary>
     public async Task<bool> KillProcessGracefullyAsync(int pid)
     {
-        try
+        return await Task.Run(async () =>
         {
-            using var process = Process.GetProcessById(pid);
-
-            // Try graceful close first
-            var closedGracefully = process.CloseMainWindow();
-            if (closedGracefully)
+            try
             {
-                // Give it time to clean up (500ms grace period)
-                var exited = process.WaitForExit(500);
-                if (exited)
+                using var process = Process.GetProcessById(pid);
+
+                // Try graceful close first
+                var closedGracefully = process.CloseMainWindow();
+                if (closedGracefully)
+                {
+                    var exited = process.WaitForExit(500);
+                    if (exited)
+                        return true;
+                }
+
+                if (!process.HasExited)
+                {
+                    await Task.Delay(100);
+                    process.Kill(entireProcessTree: true);
                     return true;
-            }
+                }
 
-            // Force kill if still running
-            if (!process.HasExited)
-            {
-                await Task.Delay(100); // Small delay before force kill
-                process.Kill(entireProcessTree: true);
                 return true;
             }
-
-            return true;
-        }
-        catch (ArgumentException)
-        {
-            // Process doesn't exist anymore
-            return false;
-        }
-        catch (Exception ex)
-        {
-            Debug.WriteLine($"Error killing process {pid} gracefully: {ex.Message}");
-            return false;
-        }
+            catch (ArgumentException)
+            {
+                return false;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error killing process {pid} gracefully: {ex.Message}");
+                return false;
+            }
+        });
     }
 
     /// <summary>

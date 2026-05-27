@@ -64,7 +64,6 @@ public partial class App : Application
         services.AddSingleton<TrayViewModel>(sp => new TrayViewModel(
             sp.GetRequiredService<PortScannerService>(),
             sp.GetRequiredService<ProcessKillerService>(),
-            sp.GetRequiredService<DockerEngineClient>(),
             sp.GetRequiredService<DockerPortCatalogService>(),
             sp.GetRequiredService<DockerContainerStopService>(),
             sp.GetRequiredService<IConfiguration>(),
@@ -90,7 +89,7 @@ public partial class App : Application
             });
 
         if (File.Exists(Path.Combine(AppContext.BaseDirectory, "appsettings.json")))
-            builder.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+            builder.AddJsonFile("appsettings.json", optional: false, reloadOnChange: false);
 
         return builder.Build();
     }

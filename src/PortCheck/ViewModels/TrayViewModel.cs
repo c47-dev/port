@@ -13,12 +13,10 @@ public partial class TrayViewModel : ObservableObject
 {
     private readonly PortScannerService _scanner;
     private readonly ProcessKillerService _killer;
-    private readonly DockerEngineClient _dockerEngine;
     private readonly DockerPortCatalogService _dockerCatalog;
     private readonly DockerContainerStopService _dockerStop;
     private readonly Dispatcher _dispatcher;
     private readonly bool _dockerCatalogEnabled;
-    private readonly int _dockerProbeTimeoutMs;
 
     private CancellationTokenSource? _refreshCancellation;
     private CancellationTokenSource? _scanCts;
@@ -57,7 +55,6 @@ public partial class TrayViewModel : ObservableObject
     public TrayViewModel(
         PortScannerService scanner,
         ProcessKillerService killer,
-        DockerEngineClient dockerEngine,
         DockerPortCatalogService dockerCatalog,
         DockerContainerStopService dockerStop,
         IConfiguration configuration,
@@ -65,7 +62,6 @@ public partial class TrayViewModel : ObservableObject
     {
         _scanner = scanner;
         _killer = killer;
-        _dockerEngine = dockerEngine;
         _dockerCatalog = dockerCatalog;
         _dockerStop = dockerStop;
         _dispatcher = dispatcher;
@@ -75,7 +71,6 @@ public partial class TrayViewModel : ObservableObject
             RefreshIntervalSeconds = 5;
 
         _dockerCatalogEnabled = configuration.GetValue("appSettings:dockerCatalogEnabled", true);
-        _dockerProbeTimeoutMs = configuration.GetValue("appSettings:dockerEngineProbeTimeoutMs", 400);
     }
 
     partial void OnSearchQueryChanged(string value) => ApplyFilter();
@@ -102,7 +97,7 @@ public partial class TrayViewModel : ObservableObject
         if (Interlocked.CompareExchange(ref _scanInFlight, 1, 0) != 0)
             return;
 
-        IsScanning = true;
+        await _dispatcher.InvokeAsync(() => IsScanning = true);
         _scanCts?.Cancel();
         _scanCts = new CancellationTokenSource();
         var ct = _scanCts.Token;
@@ -115,14 +110,11 @@ public partial class TrayViewModel : ObservableObject
 
             var listen = HostListenSnapshot.FromPorts(localPorts);
             IReadOnlyList<DockerPortInfo> dockerRows = Array.Empty<DockerPortInfo>();
-            var dockerVisible = false;
 
-            if (_dockerCatalogEnabled &&
-                await _dockerEngine.TryProbeAsync(_dockerProbeTimeoutMs, ct))
-            {
+            if (_dockerCatalogEnabled)
                 dockerRows = await _dockerCatalog.FetchPublishedTcpAsync(listen, ct);
-                dockerVisible = dockerRows.Count > 0;
-            }
+
+            var dockerVisible = dockerRows.Count > 0;
 
             if (ct.IsCancellationRequested)
                 return;
@@ -136,10 +128,18 @@ public partial class TrayViewModel : ObservableObject
 
             var switchToLocal = ActivePane == PortPane.Docker && !dockerVisible;
 
-            _dispatcher.Invoke(() =>
+            await _dispatcher.InvokeAsync(() =>
             {
-                ReplaceCollection(LocalPorts, localPorts);
-                ReplaceCollection(DockerPorts, dockerVisible ? dockerRows : Array.Empty<DockerPortInfo>());
+                ReconcileCollection(
+                    LocalPorts,
+                    localPorts,
+                    port => (port.Pid, port.Port, port.Address),
+                    PreserveLocalRowState);
+                ReconcileCollection(
+                    DockerPorts,
+                    dockerVisible ? dockerRows : Array.Empty<DockerPortInfo>(),
+                    row => (row.ContainerId, row.HostPort, row.ContainerPort, row.HostAddress, row.Protocol),
+                    PreserveDockerRowState);
                 IsDockerSurfaceVisible = dockerVisible;
                 if (switchToLocal)
                     ActivePane = PortPane.Local;
@@ -154,7 +154,7 @@ public partial class TrayViewModel : ObservableObject
         }
         finally
         {
-            IsScanning = false;
+            await _dispatcher.InvokeAsync(() => IsScanning = false);
             Interlocked.Exchange(ref _scanInFlight, 0);
         }
     }
@@ -177,7 +177,7 @@ public partial class TrayViewModel : ObservableObject
         {
             port.IsKilling = true;
             var success = await _killer.KillProcessGracefullyAsync(port.Pid);
-            await Task.Delay(500);
+            await Task.Delay(200);
             await RefreshPortsAsync();
             if (!success)
             {
@@ -211,7 +211,7 @@ public partial class TrayViewModel : ObservableObject
         {
             row.IsKilling = true;
             var success = await _dockerStop.StopContainerAsync(row.ContainerId);
-            await Task.Delay(500);
+            await Task.Delay(200);
             await RefreshPortsAsync();
             if (!success && DockerPorts.Contains(row))
                 row.IsKilling = false;
@@ -226,8 +226,22 @@ public partial class TrayViewModel : ObservableObject
     [RelayCommand]
     public async Task KillAllLocalAsync()
     {
-        foreach (var port in LocalPorts.Where(p => p.IsActive).ToList())
-            await KillProcessAsync(port);
+        var activePorts = LocalPorts.Where(p => p.IsActive).ToList();
+        if (activePorts.Count == 0)
+            return;
+
+        foreach (var port in activePorts)
+            port.IsKilling = true;
+
+        foreach (var port in activePorts)
+        {
+            var success = await _killer.KillProcessGracefullyAsync(port.Pid);
+            if (!success)
+                port.IsKilling = false;
+        }
+
+        await Task.Delay(200);
+        await RefreshPortsAsync();
     }
 
     private void StartAutoRefresh()
@@ -272,7 +286,10 @@ public partial class TrayViewModel : ObservableObject
                     p.ContainerIdShort.Contains(q, StringComparison.OrdinalIgnoreCase));
             }
 
-            ReplaceCollection(FilteredDockerPorts, dockerSource.OrderBy(p => p.HostPort).ToList());
+            ReconcileCollection(
+                FilteredDockerPorts,
+                dockerSource.ToList(),
+                row => (row.ContainerId, row.HostPort, row.ContainerPort, row.HostAddress, row.Protocol));
             OnPropertyChanged(nameof(ActivePanePortCount));
             return;
         }
@@ -286,15 +303,52 @@ public partial class TrayViewModel : ObservableObject
                 p.Pid.ToString().Contains(q, StringComparison.Ordinal));
         }
 
-        ReplaceCollection(FilteredLocalPorts, localSource.OrderBy(p => p.Port).ToList());
+        ReconcileCollection(
+            FilteredLocalPorts,
+            localSource.ToList(),
+            port => (port.Pid, port.Port, port.Address));
         OnPropertyChanged(nameof(LocalPortCount));
         OnPropertyChanged(nameof(ActivePanePortCount));
     }
 
-    private static void ReplaceCollection<T>(ObservableCollection<T> target, IEnumerable<T> items)
+    private static void ReconcileCollection<TItem, TKey>(
+        ObservableCollection<TItem> target,
+        IReadOnlyList<TItem> items,
+        Func<TItem, TKey> keySelector,
+        Action<TItem, TItem>? preserveState = null)
+        where TKey : notnull
     {
-        target.Clear();
+        var existingByKey = target.ToDictionary(keySelector);
+        var reconciled = new List<TItem>(items.Count);
+
         foreach (var item in items)
-            target.Add(item);
+        {
+            if (existingByKey.TryGetValue(keySelector(item), out var existing))
+                preserveState?.Invoke(existing, item);
+
+            reconciled.Add(item);
+        }
+
+        var commonCount = Math.Min(target.Count, reconciled.Count);
+        for (var i = 0; i < commonCount; i++)
+            target[i] = reconciled[i];
+
+        while (target.Count > reconciled.Count)
+            target.RemoveAt(target.Count - 1);
+
+        for (var i = commonCount; i < reconciled.Count; i++)
+            target.Add(reconciled[i]);
+    }
+
+    private static void PreserveLocalRowState(PortInfo existing, PortInfo next)
+    {
+        next.IsKilling = existing.IsKilling;
+        next.IsConfirmingKill = existing.IsConfirmingKill;
+    }
+
+    private static void PreserveDockerRowState(DockerPortInfo existing, DockerPortInfo next)
+    {
+        next.IsKilling = existing.IsKilling;
+        next.IsConfirmingKill = existing.IsConfirmingKill;
     }
 }

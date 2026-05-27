@@ -15,6 +15,8 @@ namespace PortCheck.Helpers;
 /// </summary>
 public static class BackdropBlurHelper
 {
+    private const double DownsampleScale = 0.25;
+
     public static ImageSource? CaptureBlurredRegion(Rect deviceRect, double blurRadius = 28, double dimOpacity = 0.08)
     {
         if (deviceRect.Width < 1 || deviceRect.Height < 1)
@@ -26,18 +28,28 @@ public static class BackdropBlurHelper
             var height = (int)Math.Ceiling(deviceRect.Height);
             var x = (int)Math.Floor(deviceRect.X);
             var y = (int)Math.Floor(deviceRect.Y);
+            var sampleWidth = Math.Max(1, (int)Math.Ceiling(width * DownsampleScale));
+            var sampleHeight = Math.Max(1, (int)Math.Ceiling(height * DownsampleScale));
 
-            using var screen = new Bitmap(width, height, PixelFormat.Format32bppArgb);
-            using (var g = Graphics.FromImage(screen))
+            using var captured = new Bitmap(width, height, PixelFormat.Format32bppArgb);
+            using (var g = Graphics.FromImage(captured))
             {
                 g.CopyFromScreen(x, y, 0, 0, new System.Drawing.Size(width, height), CopyPixelOperation.SourceCopy);
             }
 
-            var source = ToBitmapSource(screen);
+            using var downsampled = new Bitmap(sampleWidth, sampleHeight, PixelFormat.Format32bppArgb);
+            using (var g = Graphics.FromImage(downsampled))
+            {
+                g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBilinear;
+                g.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.HighQuality;
+                g.DrawImage(captured, new Rectangle(0, 0, sampleWidth, sampleHeight));
+            }
+
+            var source = ToBitmapSource(downsampled);
             if (source == null)
                 return null;
 
-            var blurred = ApplyBlur(source, blurRadius);
+            var blurred = ApplyBlur(source, blurRadius * DownsampleScale, width, height);
             if (blurred == null)
                 return null;
 
@@ -73,18 +85,21 @@ public static class BackdropBlurHelper
             h * dpi.DpiScaleY);
     }
 
-    private static BitmapSource? ApplyBlur(BitmapSource source, double radius)
+    private static BitmapSource? ApplyBlur(BitmapSource source, double radius, int outputWidth, int outputHeight)
     {
         var image = new System.Windows.Controls.Image
         {
             Source = source,
-            Effect = new BlurEffect { Radius = radius, RenderingBias = RenderingBias.Quality }
+            Width = outputWidth,
+            Height = outputHeight,
+            Stretch = Stretch.Fill,
+            Effect = new BlurEffect { Radius = radius, RenderingBias = RenderingBias.Performance }
         };
 
-        image.Measure(new System.Windows.Size(source.PixelWidth, source.PixelHeight));
-        image.Arrange(new Rect(0, 0, source.PixelWidth, source.PixelHeight));
+        image.Measure(new System.Windows.Size(outputWidth, outputHeight));
+        image.Arrange(new Rect(0, 0, outputWidth, outputHeight));
 
-        var rtb = new RenderTargetBitmap(source.PixelWidth, source.PixelHeight, 96, 96, PixelFormats.Pbgra32);
+        var rtb = new RenderTargetBitmap(outputWidth, outputHeight, 96, 96, PixelFormats.Pbgra32);
         rtb.Render(image);
         rtb.Freeze();
         return rtb;

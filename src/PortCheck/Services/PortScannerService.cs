@@ -19,6 +19,8 @@ namespace PortCheck.Services;
 public class PortScannerService
 {
     private readonly bool _skipHeavyDockerProxyInfo;
+    private readonly Dictionary<int, CachedProcessInfo> _processInfoCache = new();
+    private readonly string _currentUser = Environment.UserName;
 
     public PortScannerService(bool skipHeavyDockerProxyInfo = true) =>
         _skipHeavyDockerProxyInfo = skipHeavyDockerProxyInfo;
@@ -58,7 +60,7 @@ public class PortScannerService
         public byte[] remotePort;
         public int owningPid;
 
-        public ushort LocalPort => BitConverter.ToUInt16(new byte[2] { localPort[1], localPort[0] }, 0);
+        public ushort LocalPort => (ushort)((localPort[0] << 8) | localPort[1]);
         public string LocalAddress => new System.Net.IPAddress(localAddr).ToString();
     }
 
@@ -87,7 +89,7 @@ public class PortScannerService
         public uint state;
         public int owningPid;
 
-        public ushort LocalPort => BitConverter.ToUInt16(new byte[2] { localPort[1], localPort[0] }, 0);
+        public ushort LocalPort => (ushort)((localPort[0] << 8) | localPort[1]);
         public string LocalAddress => new System.Net.IPAddress(localAddr).ToString();
     }
 
@@ -122,26 +124,19 @@ public class PortScannerService
             try
             {
                 var ports = new List<PortInfo>();
-                var processCache = new Dictionary<int, (string name, string command, string user)>();
+                var seen = new HashSet<(int Pid, int Port, string Address)>();
 
-                // Scan IPv4 ports
-                var tcpRows = GetAllTcpConnections();
-                var listeningRows = tcpRows.Where(row => row.state == MIB_TCP_STATE_LISTEN).ToList();
-
-                foreach (var row in listeningRows)
+                foreach (var row in GetAllTcpConnections())
                 {
                     try
                     {
                         var pid = row.owningPid;
                         var port = row.LocalPort;
                         var address = row.LocalAddress;
+                        if (!seen.Add((pid, port, address)))
+                            continue;
 
-                        // Get process info (with caching)
-                        if (!processCache.TryGetValue(pid, out var processInfo))
-                        {
-                            processInfo = GetProcessInfo(pid);
-                            processCache[pid] = processInfo;
-                        }
+                        var processInfo = GetProcessInfo(pid);
 
                         var portInfo = PortInfo.Active(
                             port: port,
@@ -150,11 +145,6 @@ public class PortScannerService
                             address: address,
                             user: processInfo.user,
                             command: processInfo.command);
-                        
-                        // Explicitly set IsKilling to false when creating new Active ports
-                        portInfo.IsKilling = false;
-                        portInfo.IsConfirmingKill = false;
-
                         ports.Add(portInfo);
                     }
                     catch
@@ -164,24 +154,17 @@ public class PortScannerService
                     }
                 }
 
-                // Scan IPv6 ports
-                var tcp6Rows = GetAllTcp6Connections();
-                var listening6Rows = tcp6Rows.Where(row => row.state == MIB_TCP_STATE_LISTEN).ToList();
-
-                foreach (var row in listening6Rows)
+                foreach (var row in GetAllTcp6Connections())
                 {
                     try
                     {
                         var pid = row.owningPid;
                         var port = row.LocalPort;
                         var address = row.LocalAddress;
+                        if (!seen.Add((pid, port, address)))
+                            continue;
 
-                        // Get process info (with caching)
-                        if (!processCache.TryGetValue(pid, out var processInfo))
-                        {
-                            processInfo = GetProcessInfo(pid);
-                            processCache[pid] = processInfo;
-                        }
+                        var processInfo = GetProcessInfo(pid);
 
                         var portInfo = PortInfo.Active(
                             port: port,
@@ -190,10 +173,6 @@ public class PortScannerService
                             address: address,
                             user: processInfo.user,
                             command: processInfo.command);
-                        
-                        portInfo.IsKilling = false;
-                        portInfo.IsConfirmingKill = false;
-
                         ports.Add(portInfo);
                     }
                     catch
@@ -203,10 +182,7 @@ public class PortScannerService
                     }
                 }
 
-                // Remove duplicates (same port + pid)
                 return ports
-                    .GroupBy(p => new { p.Port, p.Pid })
-                    .Select(g => g.First())
                     .OrderBy(p => p.Port)
                     .ToList();
             }
@@ -232,7 +208,7 @@ public class PortScannerService
             ref bufferSize,
             true,
             AF_INET,
-            TCP_TABLE_CLASS.TCP_TABLE_OWNER_PID_ALL,
+            TCP_TABLE_CLASS.TCP_TABLE_OWNER_PID_LISTENER,
             0);
 
         IntPtr tcpTablePtr = Marshal.AllocHGlobal(bufferSize);
@@ -245,7 +221,7 @@ public class PortScannerService
                 ref bufferSize,
                 true,
                 AF_INET,
-                TCP_TABLE_CLASS.TCP_TABLE_OWNER_PID_ALL,
+                TCP_TABLE_CLASS.TCP_TABLE_OWNER_PID_LISTENER,
                 0);
 
             if (result != 0)
@@ -283,7 +259,7 @@ public class PortScannerService
             ref bufferSize,
             true,
             AF_INET6,
-            TCP_TABLE_CLASS.TCP_TABLE_OWNER_PID_ALL,
+            TCP_TABLE_CLASS.TCP_TABLE_OWNER_PID_LISTENER,
             0);
 
         if (bufferSize == 0)
@@ -299,7 +275,7 @@ public class PortScannerService
                 ref bufferSize,
                 true,
                 AF_INET6,
-                TCP_TABLE_CLASS.TCP_TABLE_OWNER_PID_ALL,
+                TCP_TABLE_CLASS.TCP_TABLE_OWNER_PID_LISTENER,
                 0);
 
             if (result != 0)
@@ -331,10 +307,22 @@ public class PortScannerService
         try
         {
             using var process = Process.GetProcessById(pid);
+            var startedAtTicks = TryGetProcessStartTimeTicks(process);
+            if (startedAtTicks.HasValue &&
+                _processInfoCache.TryGetValue(pid, out var cached) &&
+                cached.StartedAtTicks == startedAtTicks.Value)
+            {
+                return cached.Value;
+            }
+
             var name = process.ProcessName;
 
             if (_skipHeavyDockerProxyInfo && IsDockerProxyProcess(name))
-                return (name, name, Environment.UserName);
+            {
+                var dockerProxy = (name, name, _currentUser);
+                CacheProcessInfo(pid, startedAtTicks, dockerProxy);
+                return dockerProxy;
+            }
 
             // Try to get full command line
             string command;
@@ -356,14 +344,16 @@ public class PortScannerService
             string user;
             try
             {
-                user = GetProcessOwner(process) ?? Environment.UserName;
+                user = GetProcessOwner(process) ?? _currentUser;
             }
             catch
             {
-                user = Environment.UserName;
+                user = _currentUser;
             }
 
-            return (name, command, user);
+            var value = (name, command, user);
+            CacheProcessInfo(pid, startedAtTicks, value);
+            return value;
         }
         catch
         {
@@ -436,4 +426,28 @@ public class PortScannerService
         var lower = processName.ToLowerInvariant();
         return DockerProxyProcessNames.Any(lower.Contains);
     }
+
+    private void CacheProcessInfo(int pid, long? startedAtTicks, (string name, string command, string user) value)
+    {
+        if (!startedAtTicks.HasValue)
+            return;
+
+        _processInfoCache[pid] = new CachedProcessInfo(startedAtTicks.Value, value);
+    }
+
+    private static long? TryGetProcessStartTimeTicks(Process process)
+    {
+        try
+        {
+            return process.StartTime.ToUniversalTime().Ticks;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private readonly record struct CachedProcessInfo(
+        long StartedAtTicks,
+        (string name, string command, string user) Value);
 }
