@@ -1,0 +1,63 @@
+{
+  "project": "PortCheck rebrand",
+  "stories": [
+    {
+      "id": "US-R1",
+      "title": "Remove PortKiller docs outside docs/",
+      "priority": 1,
+      "passes": true,
+      "acceptanceCriteria": [
+        "CLAUDE.md and AGENTS.md deleted",
+        "_upstream/ directory removed",
+        "rg PortKiller on repo root (excluding docs/) returns no matches in .md files except none",
+        "progress.txt and prd.json reference PortCheck only"
+      ]
+    },
+    {
+      "id": "US-R2",
+      "title": "Rename project PortKiller → PortCheck",
+      "priority": 2,
+      "passes": true,
+      "acceptanceCriteria": [
+        "src/PortCheck/PortCheck.csproj and src/PortCheck.sln exist; src/PortKiller removed",
+        "RootNamespace and AssemblyName are PortCheck",
+        "All .cs/.xaml use namespace PortCheck; zero PortKiller in src/PortCheck",
+        "app.manifest and app.Debug.manifest use PortCheck.app identity"
+      ]
+    },
+    {
+      "id": "US-R3",
+      "title": "Application icon and tray icon",
+      "priority": 3,
+      "passes": true,
+      "acceptanceCriteria": [
+        "Assets/AppIcon.ico exists with 16/32/48/256 sizes",
+        "PortCheck.csproj sets ApplicationIcon to Assets/AppIcon.ico",
+        "TrayHost loads AppIcon.ico for TaskbarIcon (not procedural bitmap)",
+        "Published exe shows PortCheck icon in Explorer"
+      ]
+    },
+    {
+      "id": "US-R4",
+      "title": "README and UI strings",
+      "priority": 4,
+      "passes": true,
+      "acceptanceCriteria": [
+        "README.md titles PortCheck with no PortKiller or upstream fork references",
+        "UI strings (tooltips, MessageBox titles, window Title) say PortCheck",
+        "rg PortKiller src/ returns zero matches"
+      ]
+    },
+    {
+      "id": "US-R5",
+      "title": "Release build",
+      "priority": 5,
+      "passes": true,
+      "acceptanceCriteria": [
+        "dotnet build -c Debug on src/PortCheck succeeds",
+        "dotnet publish -c Release -r win-x64 /p:PublishSingleFile=true outputs PortCheck.exe",
+        "publish folder contains PortCheck.exe and appsettings.json"
+      ]
+    }
+  ]
+}

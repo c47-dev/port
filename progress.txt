@@ -1,0 +1,14 @@
+# PortCheck rebrand — 2026-05-26
+
+## Done
+- Removed CLAUDE.md, AGENTS.md, _upstream/
+- Renamed src/PortKiller → src/PortCheck; PortCheck.csproj + PortCheck.sln
+- Namespace/assembly/UI strings: PortCheck
+- Added Assets/AppIcon.ico (16/32/48/256) via scripts/GenerateAppIcon.ps1
+- TrayHost loads AppIcon.ico; csproj ApplicationIcon set
+- README rewritten for PortCheck (no upstream PortKiller references)
+- Release publish: src/PortCheck/bin/Release/net8.0-windows/win-x64/publish/PortCheck.exe
+
+## Note
+- docs/ still contains historical PortKiller plan/implementation filenames (excluded per user request)
+- Leftover src/PortKiller/ may exist if bin was locked during delete; safe to remove manually

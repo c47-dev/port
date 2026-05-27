@@ -1,0 +1,235 @@
+<Window x:Class="PortCheck.TrayPopupWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:models="clr-namespace:PortCheck.Models"
+        Title="PortCheck"
+        Width="340"
+        Height="520"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        Topmost="True"
+        UseLayoutRounding="True"
+        SnapsToDevicePixels="True"
+        Deactivated="Window_Deactivated">
+
+    <Border CornerRadius="20" ClipToBounds="True" Effect="{StaticResource Glass.WindowShadow}">
+        <Grid>
+            <!-- Layer 0: real blurred desktop capture (code-behind) -->
+            <Image x:Name="BackdropImage" Stretch="Fill" IsHitTestVisible="False"/>
+
+            <!-- Layer 1–3: liquid glass material (pure WPF, no OS acrylic) -->
+            <Border CornerRadius="20" Background="{StaticResource Glass.Tint}" IsHitTestVisible="False"/>
+            <Border CornerRadius="20" Background="{StaticResource Glass.InnerSheen}" IsHitTestVisible="False"/>
+            <Border CornerRadius="20" BorderBrush="{StaticResource Glass.RimLight}" BorderThickness="1"
+                    Background="Transparent" IsHitTestVisible="False"/>
+
+            <!-- Layer 4: content -->
+            <Border CornerRadius="18" Margin="2" Background="Transparent" ClipToBounds="True">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <Grid Grid.Row="0" Margin="12,12,12,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <Border Background="{StaticResource Search.Fill}" CornerRadius="10"
+                                BorderBrush="{StaticResource Search.Stroke}" BorderThickness="1" Height="32">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="⌕" Margin="10,0,6,0" VerticalAlignment="Center"
+                                           Foreground="{StaticResource Text.Secondary}" FontSize="13"/>
+                                <TextBox x:Name="SearchBox" Grid.Column="1"
+                                         Background="Transparent" BorderThickness="0"
+                                         Foreground="{StaticResource Text.Primary}"
+                                         CaretBrush="{StaticResource Text.Primary}"
+                                         VerticalContentAlignment="Center" FontSize="13"
+                                         Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged}"/>
+                                <TextBlock Grid.Column="1" Text="Search..." IsHitTestVisible="False"
+                                           Foreground="{StaticResource Text.Secondary}"
+                                           VerticalAlignment="Center" Margin="2,0,0,0">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Text, ElementName=SearchBox}" Value="">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </Grid>
+                        </Border>
+                        <Border Grid.Column="1" Background="#35FFFFFF" CornerRadius="10" Margin="8,0,0,0"
+                                Padding="8,2" VerticalAlignment="Center" MinWidth="28"
+                                BorderBrush="#50FFFFFF" BorderThickness="1">
+                            <TextBlock Text="{Binding TotalPortCount}" FontSize="11" FontWeight="Bold"
+                                       Foreground="{StaticResource Text.Primary}" HorizontalAlignment="Center"/>
+                        </Border>
+                    </Grid>
+
+                    <Grid Grid.Row="1" Margin="4,0,2,0">
+                        <ListBox x:Name="PortsList"
+                                 Background="Transparent" BorderThickness="0"
+                                 ItemsSource="{Binding FilteredPorts}"
+                                 ItemContainerStyle="{StaticResource GlassPortListItem}"
+                                 ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                 ScrollViewer.CanContentScroll="False"
+                                 VirtualizingPanel.IsVirtualizing="True"
+                                 VirtualizingPanel.ScrollUnit="Pixel"
+                                 PreviewMouseWheel="PortsList_PreviewMouseWheel">
+                            <ListBox.Resources>
+                                <Style TargetType="ScrollBar" BasedOn="{StaticResource GlassScrollBar}"/>
+                            </ListBox.Resources>
+                            <ListBox.ItemTemplate>
+                                <DataTemplate DataType="{x:Type models:PortInfo}">
+                                    <Grid MinHeight="32">
+                                        <Grid x:Name="NormalRow">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Ellipse Grid.Column="0" Width="6" Height="6"
+                                                     Fill="{StaticResource Status.Active}"
+                                                     VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                            <TextBlock Grid.Column="1" Text="{Binding DisplayPort}" FontWeight="SemiBold"
+                                                       Foreground="{StaticResource Text.Primary}" VerticalAlignment="Center"
+                                                       Margin="0,0,8,0"/>
+                                            <TextBlock Grid.Column="2" Text="{Binding ProcessName}"
+                                                       Foreground="{StaticResource Text.Secondary}"
+                                                       TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                                            <TextBlock x:Name="PidText" Grid.Column="3" Text="{Binding Pid}"
+                                                       Foreground="{StaticResource Text.Tertiary}" FontSize="11"
+                                                       VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                            <TextBlock x:Name="ProcessingText" Grid.Column="3" Text="⌛" FontSize="14"
+                                                       Foreground="#F4AB3A" Visibility="Collapsed" VerticalAlignment="Center"/>
+                                            <Button x:Name="KillButton" Grid.Column="3" Visibility="Hidden"
+                                                    Width="22" Height="22" Background="{StaticResource Danger}"
+                                                    BorderThickness="0" Cursor="Hand"
+                                                    PreviewMouseLeftButtonDown="KillSinglePort_Click"
+                                                    Tag="{Binding}">
+                                                <Button.Template>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Border Background="{TemplateBinding Background}" CornerRadius="11">
+                                                            <TextBlock Text="✕" FontSize="10" Foreground="White"
+                                                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                        </Border>
+                                                    </ControlTemplate>
+                                                </Button.Template>
+                                            </Button>
+                                        </Grid>
+                                        <Grid x:Name="ConfirmRow" Visibility="Collapsed" MinHeight="32">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="14"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="1" VerticalAlignment="Center"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       Foreground="{StaticResource Text.Primary}"
+                                                       FontSize="12" FontWeight="SemiBold">
+                                                <Run Text="Kill "/>
+                                                <Run Text="{Binding ProcessName}"/>
+                                                <Run Text="?"/>
+                                            </TextBlock>
+                                            <StackPanel Grid.Column="2" Orientation="Horizontal"
+                                                        VerticalAlignment="Center" Margin="0,0,4,0">
+                                                <Button Content="Kill" Style="{StaticResource GlassRowKillButton}"
+                                                        Click="ConfirmKill_Click" Tag="{Binding}"/>
+                                                <Button Style="{StaticResource GlassRowDismissButton}"
+                                                        Click="CancelKill_Click" Tag="{Binding}"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Grid>
+                                    <DataTemplate.Triggers>
+                                        <MultiDataTrigger>
+                                            <MultiDataTrigger.Conditions>
+                                                <Condition Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True"/>
+                                                <Condition Binding="{Binding IsConfirmingKill}" Value="False"/>
+                                                <Condition Binding="{Binding IsKilling}" Value="False"/>
+                                            </MultiDataTrigger.Conditions>
+                                            <Setter TargetName="PidText" Property="Visibility" Value="Hidden"/>
+                                            <Setter TargetName="KillButton" Property="Visibility" Value="Visible"/>
+                                        </MultiDataTrigger>
+                                        <DataTrigger Binding="{Binding IsConfirmingKill}" Value="True">
+                                            <Setter TargetName="NormalRow" Property="Visibility" Value="Collapsed"/>
+                                            <Setter TargetName="ConfirmRow" Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding IsKilling}" Value="True">
+                                            <Setter TargetName="ConfirmRow" Property="Visibility" Value="Collapsed"/>
+                                            <Setter TargetName="PidText" Property="Visibility" Value="Collapsed"/>
+                                            <Setter TargetName="KillButton" Property="Visibility" Value="Collapsed"/>
+                                            <Setter TargetName="ProcessingText" Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </DataTemplate.Triggers>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                        <TextBlock x:Name="EmptyStateText" Text="No active ports"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                                   Foreground="{StaticResource Text.Secondary}" Visibility="Collapsed"/>
+                    </Grid>
+
+                    <StackPanel Grid.Row="2" Margin="0,4,0,2">
+                        <Rectangle Height="1" Fill="{StaticResource Glass.Stroke}" Opacity="0.4" Margin="10,0"/>
+                        <Button x:Name="RefreshButton" Click="RefreshButton_Click" Style="{StaticResource GlassFooterButton}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="22"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="44"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock x:Name="RefreshIcon" Grid.Column="0" Text="↻" Style="{StaticResource GlassFooterIcon}"/>
+                                <TextBlock x:Name="RefreshStatusText" Grid.Column="1" Text="Refresh"
+                                           VerticalAlignment="Center" FontSize="13"/>
+                                <TextBlock Grid.Column="2" Text="Ctrl+R" Style="{StaticResource GlassFooterShortcut}"/>
+                            </Grid>
+                        </Button>
+                        <Button Click="KillAll_Click" Style="{StaticResource GlassFooterButton}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="22"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="44"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="✕" Style="{StaticResource GlassFooterIcon}"
+                                           Foreground="{StaticResource Danger}" FontSize="12"/>
+                                <TextBlock Grid.Column="1" Text="Kill All" Foreground="{StaticResource Danger}"
+                                           VerticalAlignment="Center" FontSize="13"/>
+                                <TextBlock Grid.Column="2" Text="Ctrl+K" Style="{StaticResource GlassFooterShortcut}"/>
+                            </Grid>
+                        </Button>
+                        <Button Click="HideToTray_Click" Style="{StaticResource GlassFooterButtonLast}"
+                                ToolTip="Hide menu — PortCheck keeps running in the system tray">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="22"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="44"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="▾" Style="{StaticResource GlassFooterIcon}"
+                                           FontSize="11"/>
+                                <TextBlock Grid.Column="1" Text="Hide" VerticalAlignment="Center" FontSize="13"/>
+                                <TextBlock Grid.Column="2" Text="Esc" Style="{StaticResource GlassFooterShortcut}"/>
+                            </Grid>
+                        </Button>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Grid>
+    </Border>
+</Window>
