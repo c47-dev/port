@@ -36,8 +36,11 @@ public partial class TrayPopupWindow : Window
             FluidAnimation.SetPaneTabWidths(LocalPaneTabButton, DockerPaneTabButton, _viewModel.ActivePane);
             _lastAnimatedPane = _viewModel.ActivePane;
             UpdateSearchPlaceholder();
+            ApplyRoundedClips();
             await Dispatcher.InvokeAsync(() => { });
         };
+
+        SizeChanged += (_, _) => ApplyRoundedClips();
 
         _viewModel.PropertyChanged += (_, e) =>
         {
@@ -123,6 +126,25 @@ public partial class TrayPopupWindow : Window
         SearchPlaceholder.Text = _viewModel.ActivePane == PortPane.Docker
             ? "Search Docker ports…"
             : "Search local ports…";
+
+    private void ApplyRoundedClips()
+    {
+        ApplyRoundedClip(OuterChromeBorder, 20);
+        ApplyRoundedClip(InnerChromeBorder, 18);
+        ApplyRoundedClip(OuterGlassRoot, 20);
+        ApplyRoundedClip(InnerContentRoot, 18);
+    }
+
+    private static void ApplyRoundedClip(FrameworkElement element, double radius)
+    {
+        if (element.ActualWidth <= 0 || element.ActualHeight <= 0)
+            return;
+
+        element.Clip = new RectangleGeometry(
+            new Rect(0, 0, element.ActualWidth, element.ActualHeight),
+            radius,
+            radius);
+    }
 
     private void SetupInputBindings()
     {

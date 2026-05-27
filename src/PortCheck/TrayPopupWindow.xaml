@@ -15,16 +15,19 @@
         SnapsToDevicePixels="True"
         Deactivated="Window_Deactivated">
 
-    <Border CornerRadius="20" ClipToBounds="True" Effect="{StaticResource Glass.WindowShadow}">
-        <Grid>
+    <Border x:Name="OuterChromeBorder" CornerRadius="20" ClipToBounds="True" Effect="{StaticResource Glass.WindowShadow}">
+        <Grid x:Name="OuterGlassRoot">
             <Image x:Name="BackdropImage" Stretch="Fill" IsHitTestVisible="False"/>
             <Border CornerRadius="20" Background="{StaticResource Glass.Tint}" IsHitTestVisible="False"/>
             <Border CornerRadius="20" Background="{StaticResource Glass.InnerSheen}" IsHitTestVisible="False"/>
-            <Border CornerRadius="20" BorderBrush="{StaticResource Glass.RimLight}" BorderThickness="1"
-                    Background="Transparent" IsHitTestVisible="False"/>
+            <Border CornerRadius="20"
+                    BorderBrush="{StaticResource Glass.RimLight}"
+                    BorderThickness="1"
+                    Background="Transparent"
+                    IsHitTestVisible="False"/>
 
-            <Border CornerRadius="18" Margin="2" Background="Transparent" ClipToBounds="True">
-                <Grid>
+            <Border x:Name="InnerChromeBorder" CornerRadius="18" Margin="2" Background="Transparent">
+                <Grid x:Name="InnerContentRoot">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
@@ -32,31 +35,47 @@
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
-                    <!-- Search -->
-                    <Grid Grid.Row="0" Margin="12,12,12,6">
+                    <Grid Grid.Row="0" Margin="16,16,16,6">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
-                        <Border Background="{StaticResource Search.Fill}" CornerRadius="12"
-                                BorderBrush="{StaticResource Search.Stroke}" BorderThickness="1" Height="30">
+                        <Border Background="{StaticResource Search.Fill}"
+                                CornerRadius="12"
+                                BorderBrush="{StaticResource Search.Stroke}"
+                                BorderThickness="1"
+                                Height="30">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0" Text="⌕" Margin="10,0,6,0" VerticalAlignment="Center"
-                                           Foreground="{StaticResource Text.Secondary}" FontSize="12"/>
-                                <TextBox x:Name="SearchBox" Grid.Column="1"
-                                         Background="Transparent" BorderThickness="0"
+                                <TextBlock Grid.Column="0"
+                                           Text="&#xE721;"
+                                           FontFamily="Segoe Fluent Icons"
+                                           Style="{StaticResource GlassTextSecondaryShadow}"
+                                           Margin="10,0,6,0"
+                                           VerticalAlignment="Center"
+                                           Foreground="{StaticResource Text.Secondary}"
+                                           FontSize="12"/>
+                                <TextBox x:Name="SearchBox"
+                                         Grid.Column="1"
+                                         Background="Transparent"
+                                         BorderThickness="0"
                                          Foreground="{StaticResource Text.Primary}"
                                          CaretBrush="{StaticResource Text.Primary}"
-                                         VerticalContentAlignment="Center" FontSize="12"
+                                         VerticalContentAlignment="Center"
+                                         FontSize="12"
                                          Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged}"/>
-                                <TextBlock x:Name="SearchPlaceholder" Grid.Column="1"
-                                           Text="Search local ports…" IsHitTestVisible="False"
+                                <TextBlock x:Name="SearchPlaceholder"
+                                           Grid.Column="1"
+                                           Text="Search local ports"
+                                           IsHitTestVisible="False"
                                            Foreground="{StaticResource Text.Secondary}"
-                                           VerticalAlignment="Center" Margin="2,0,0,0" FontSize="12">
+                                           Effect="{StaticResource Text.Shadow}"
+                                           VerticalAlignment="Center"
+                                           Margin="2,0,0,0"
+                                           FontSize="12">
                                     <TextBlock.Style>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="Visibility" Value="Collapsed"/>
@@ -70,37 +89,55 @@
                                 </TextBlock>
                             </Grid>
                         </Border>
-                        <Border Grid.Column="1" Background="#35FFFFFF" CornerRadius="10" Margin="8,0,0,0"
-                                Padding="8,2" VerticalAlignment="Center" MinWidth="28"
-                                BorderBrush="#50FFFFFF" BorderThickness="1">
-                            <TextBlock Text="{Binding ActivePanePortCount}" FontSize="11" FontWeight="Bold"
-                                       Foreground="{StaticResource Text.Primary}" HorizontalAlignment="Center"/>
+                        <Border Grid.Column="1"
+                                Background="#35FFFFFF"
+                                CornerRadius="10"
+                                Margin="10,2,2,0"
+                                Padding="8,2"
+                                VerticalAlignment="Top"
+                                MinWidth="28"
+                                BorderBrush="#50FFFFFF"
+                                BorderThickness="1">
+                            <TextBlock Text="{Binding ActivePanePortCount}"
+                                       FontSize="11"
+                                       FontWeight="Bold"
+                                       Foreground="{StaticResource Text.Primary}"
+                                       HorizontalAlignment="Center"/>
                         </Border>
                     </Grid>
 
-                    <!-- iOS 18 Mail Smart Categories — horizontal glass chips -->
-                    <ScrollViewer Grid.Row="1" Margin="12,0,12,8" Height="36"
+                    <ScrollViewer Grid.Row="1"
+                                  Margin="12,0,12,8"
+                                  Height="36"
                                   HorizontalScrollBarVisibility="Hidden"
                                   VerticalScrollBarVisibility="Disabled"
                                   Visibility="{Binding IsDockerSurfaceVisible, Converter={StaticResource BoolToVisibilityConverter}}">
                         <StackPanel Orientation="Horizontal" Margin="0,2,0,2" VerticalAlignment="Center">
-                            <Button x:Name="LocalPaneTabButton" Style="{StaticResource GlassPaneTabLocal}"
+                            <Button x:Name="LocalPaneTabButton"
+                                    Style="{StaticResource GlassPaneTabLocal}"
                                     Command="{Binding SelectPaneCommand}"
                                     CommandParameter="{x:Static models:PortPane.Local}"
                                     Click="PaneTab_Click"/>
-                            <Button x:Name="DockerPaneTabButton" Style="{StaticResource GlassPaneTabDocker}"
+                            <Button x:Name="DockerPaneTabButton"
+                                    Style="{StaticResource GlassPaneTabDocker}"
                                     Command="{Binding SelectPaneCommand}"
                                     CommandParameter="{x:Static models:PortPane.Docker}"
                                     Click="PaneTab_Click"/>
                         </StackPanel>
                     </ScrollViewer>
 
-                    <!-- List (sole occupant of row 2 *) + footer (row 3 Auto, always bottom by grid semantics). No chrome hack. -->
-                    <Grid x:Name="ListHostGrid" Grid.Row="2" ClipToBounds="True" MinHeight="120" Margin="{StaticResource Glass.Align.ListGutter}" VerticalAlignment="Stretch">
-                        <ListBox x:Name="LocalPortsList" Panel.ZIndex="1"
-                                 Background="Transparent" BorderThickness="0"
+                    <Grid x:Name="ListHostGrid"
+                          Grid.Row="2"
+                          ClipToBounds="True"
+                          MinHeight="120"
+                          Margin="{StaticResource Glass.Align.ListGutter}"
+                          VerticalAlignment="Stretch">
+                        <ListBox x:Name="LocalPortsList"
+                                 Panel.ZIndex="1"
+                                 Background="Transparent"
+                                 BorderThickness="0"
                                  ItemsSource="{Binding FilteredLocalPorts}"
-                                 ItemContainerStyle="{StaticResource GlassPortListItem}"
+                                 ItemContainerStyle="{StaticResource GlassPortListItemLocal}"
                                  ScrollViewer.VerticalScrollBarVisibility="Auto"
                                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                                  ScrollViewer.CanContentScroll="True"
@@ -124,68 +161,99 @@
                                                 <ColumnDefinition Width="{StaticResource Glass.Align.ShortcutColumn}"/>
                                             </Grid.ColumnDefinitions>
                                             <Grid Grid.Column="0"
-                                                  Width="20" Height="20"
-                                                  HorizontalAlignment="Center" VerticalAlignment="Center">
-                                                <Ellipse x:Name="ActiveDot" Width="6" Height="6"
+                                                  Width="20"
+                                                  Height="20"
+                                                  HorizontalAlignment="Center"
+                                                  VerticalAlignment="Center">
+                                                <Ellipse x:Name="ActiveDot"
+                                                         Width="6"
+                                                         Height="6"
                                                          Fill="{StaticResource Status.Active}"
-                                                         HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                         HorizontalAlignment="Center"
+                                                         VerticalAlignment="Center"/>
                                                 <ContentControl x:Name="DockerLeadingIcon"
                                                                 ContentTemplate="{StaticResource DockerPortLeadingIcon}"
                                                                 Visibility="Collapsed"
-                                                                HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                                HorizontalAlignment="Center"
+                                                                VerticalAlignment="Center"/>
                                             </Grid>
-                                            <TextBlock Grid.Column="1" Text="{Binding DisplayPort}" FontWeight="SemiBold" FontSize="12"
-                                                       Foreground="{StaticResource Text.Primary}" VerticalAlignment="Center" Margin="6,0,4,0"/>
-                                            <TextBlock Grid.Column="2" Text="{Binding ProcessName}" FontSize="12"
+                                            <TextBlock Grid.Column="1"
+                                                       Text="{Binding DisplayPort}"
+                                                       Style="{StaticResource GlassTextPrimaryShadow}"
+                                                       FontWeight="SemiBold"
+                                                       FontSize="12"
+                                                       Foreground="{StaticResource Text.Primary}"
+                                                       VerticalAlignment="Center"
+                                                       Margin="6,0,4,0"/>
+                                            <TextBlock Grid.Column="2"
+                                                       Text="{Binding ProcessName}"
+                                                       Style="{StaticResource GlassTextSecondaryShadow}"
+                                                       FontSize="12"
                                                        Foreground="{StaticResource Text.Secondary}"
-                                                       TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
-                                            <TextBlock x:Name="PidText" Grid.Column="3" Text="{Binding Pid}" FontSize="10"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       VerticalAlignment="Center"/>
+                                            <TextBlock x:Name="PidText"
+                                                       Grid.Column="3"
+                                                       Text="{Binding Pid}"
+                                                       Style="{StaticResource GlassTextTertiaryShadow}"
+                                                       FontSize="10"
                                                        Foreground="{StaticResource Text.Tertiary}"
-                                                       HorizontalAlignment="Right" VerticalAlignment="Center"
-                                                       TextAlignment="Right" Panel.ZIndex="0"/>
-                                            <TextBlock x:Name="ProcessingText" Grid.Column="3" Text="⌛" FontSize="13"
-                                                       Foreground="#F4AB3A" Visibility="Collapsed"
-                                                       HorizontalAlignment="Right" VerticalAlignment="Center"
+                                                       HorizontalAlignment="Right"
+                                                       VerticalAlignment="Center"
+                                                       TextAlignment="Right"
+                                                       Panel.ZIndex="0"/>
+                                            <TextBlock x:Name="ProcessingText"
+                                                       Grid.Column="3"
+                                                       Text="..."
+                                                       FontSize="13"
+                                                       Foreground="#F4AB3A"
+                                                       Visibility="Collapsed"
+                                                       HorizontalAlignment="Right"
+                                                       VerticalAlignment="Center"
                                                        Panel.ZIndex="2"/>
-                                            <Button x:Name="KillButton" Grid.Column="3" Visibility="Collapsed"
-                                                    Width="{StaticResource Glass.Metrics.KillButton}"
-                                                    Height="{StaticResource Glass.Metrics.KillButton}"
-                                                    HorizontalAlignment="Right" VerticalAlignment="Center"
+                                            <Button x:Name="KillButton"
+                                                    Grid.Column="3"
+                                                    Visibility="Collapsed"
+                                                    Style="{StaticResource GlassRowKillIconButtonExtracted}"
+                                                    Content="X"
+                                                    HorizontalAlignment="Right"
+                                                    VerticalAlignment="Center"
                                                     Panel.ZIndex="1"
-                                                    Background="{StaticResource Danger}"
-                                                    BorderThickness="0" Cursor="Hand"
                                                     ToolTip="Kill process on this port"
                                                     PreviewMouseLeftButtonDown="KillSinglePort_Click"
-                                                    Tag="{Binding}">
-                                                <Button.Template>
-                                                    <ControlTemplate TargetType="Button">
-                                                        <Border Background="{TemplateBinding Background}"
-                                                                CornerRadius="{StaticResource Glass.Metrics.KillCornerRadius}">
-                                                            <TextBlock Text="✕" FontSize="9" Foreground="White"
-                                                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                                        </Border>
-                                                    </ControlTemplate>
-                                                </Button.Template>
-                                            </Button>
+                                                    Tag="{Binding}"/>
                                         </Grid>
-                                        <Grid x:Name="ConfirmRow" Visibility="Collapsed"
+                                        <Grid x:Name="ConfirmRow"
+                                              Visibility="Collapsed"
                                               MinHeight="{StaticResource Glass.Metrics.RowMinHeight}">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="14"/>
                                                 <ColumnDefinition Width="*"/>
                                                 <ColumnDefinition Width="Auto"/>
                                             </Grid.ColumnDefinitions>
-                                            <TextBlock Grid.Column="1" VerticalAlignment="Center" FontSize="11" FontWeight="SemiBold"
-                                                       TextTrimming="CharacterEllipsis" Foreground="{StaticResource Text.Primary}">
+                                            <TextBlock Grid.Column="1"
+                                                       VerticalAlignment="Center"
+                                                       Style="{StaticResource GlassTextPrimaryShadow}"
+                                                       FontSize="11"
+                                                       FontWeight="SemiBold"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       Foreground="{StaticResource Text.Primary}">
                                                 <Run Text="Kill "/>
                                                 <Run Text="{Binding ProcessName}"/>
                                                 <Run Text="?"/>
                                             </TextBlock>
-                                            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,4,0">
-                                                <Button Content="Kill" Style="{StaticResource GlassRowKillButton}"
-                                                        Click="ConfirmKill_Click" Tag="{Binding}"/>
-                                                <Button Style="{StaticResource GlassRowDismissButton}"
-                                                        Click="CancelKill_Click" Tag="{Binding}"/>
+                                            <StackPanel Grid.Column="2"
+                                                        Orientation="Horizontal"
+                                                        VerticalAlignment="Center"
+                                                        Margin="0,0,4,0">
+                                                <Button Content="Kill"
+                                                        Style="{StaticResource GlassRowKillButtonExtracted}"
+                                                        Click="ConfirmKill_Click"
+                                                        Tag="{Binding}"/>
+                                                <Button Content="X"
+                                                        Style="{StaticResource GlassRowDismissButtonExtracted}"
+                                                        Click="CancelKill_Click"
+                                                        Tag="{Binding}"/>
                                             </StackPanel>
                                         </Grid>
                                     </Grid>
@@ -218,18 +286,20 @@
                             </ListBox.ItemTemplate>
                         </ListBox>
 
-                        <ListBox x:Name="DockerPortsList" Panel.ZIndex="1"
-                                 Background="Transparent" BorderThickness="0"
-                                  ItemsSource="{Binding FilteredDockerPorts}"
-                                  ItemContainerStyle="{StaticResource GlassPortListItem}"
-                                  ScrollViewer.VerticalScrollBarVisibility="Auto"
-                                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                                  ScrollViewer.CanContentScroll="True"
-                                  VirtualizingPanel.IsVirtualizing="True"
-                                  VirtualizingPanel.VirtualizationMode="Recycling"
-                                  VirtualizingPanel.ScrollUnit="Pixel"
-                                  PreviewMouseWheel="PortsList_PreviewMouseWheel"
-                                  VerticalAlignment="Stretch"
+                        <ListBox x:Name="DockerPortsList"
+                                 Panel.ZIndex="1"
+                                 Background="Transparent"
+                                 BorderThickness="0"
+                                 ItemsSource="{Binding FilteredDockerPorts}"
+                                 ItemContainerStyle="{StaticResource GlassPortListItemDocker}"
+                                 ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                 ScrollViewer.CanContentScroll="True"
+                                 VirtualizingPanel.IsVirtualizing="True"
+                                 VirtualizingPanel.VirtualizationMode="Recycling"
+                                 VirtualizingPanel.ScrollUnit="Pixel"
+                                 PreviewMouseWheel="PortsList_PreviewMouseWheel"
+                                 VerticalAlignment="Stretch"
                                  Padding="0,0,6,8">
                             <ListBox.Resources>
                                 <Style TargetType="ScrollBar" BasedOn="{StaticResource GlassScrollBar}"/>
@@ -243,8 +313,11 @@
                                                 <ColumnDefinition Width="*"/>
                                                 <ColumnDefinition Width="{StaticResource Glass.Align.ShortcutColumn}"/>
                                             </Grid.ColumnDefinitions>
-                                            <Ellipse Grid.Column="0" Width="6" Height="6"
-                                                     HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <Ellipse Grid.Column="0"
+                                                     Width="6"
+                                                     Height="6"
+                                                     HorizontalAlignment="Center"
+                                                     VerticalAlignment="Center">
                                                 <Ellipse.Style>
                                                     <Style TargetType="Ellipse">
                                                         <Setter Property="Fill" Value="#FF6B7280"/>
@@ -258,58 +331,76 @@
                                             </Ellipse>
                                             <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="8,0,0,0">
                                                 <StackPanel Orientation="Horizontal">
-                                                    <TextBlock Text="{Binding DisplayHostPort}" FontWeight="SemiBold" FontSize="12"
+                                                    <TextBlock Text="{Binding DisplayHostPort}"
+                                                               Style="{StaticResource GlassTextPrimaryShadow}"
+                                                               FontWeight="SemiBold"
+                                                               FontSize="12"
                                                                Foreground="{StaticResource Text.Primary}"/>
-                                                    <TextBlock Text="{Binding HostAddress}" FontSize="10" Margin="6,0,0,0"
-                                                               Foreground="{StaticResource Text.Tertiary}" VerticalAlignment="Center"/>
+                                                    <TextBlock Text="{Binding HostAddress}"
+                                                               Style="{StaticResource GlassTextTertiaryShadow}"
+                                                               FontSize="10"
+                                                               Margin="6,0,0,0"
+                                                               Foreground="{StaticResource Text.Tertiary}"
+                                                               VerticalAlignment="Center"/>
                                                 </StackPanel>
-                                                <TextBlock Text="{Binding DisplayPortDetail}" FontSize="11"
+                                                <TextBlock Text="{Binding DisplayPortDetail}"
+                                                           Style="{StaticResource GlassTextSecondaryShadow}"
+                                                           FontSize="11"
                                                            Foreground="{StaticResource Text.Secondary}"
                                                            TextTrimming="CharacterEllipsis"/>
                                             </StackPanel>
-                                            <TextBlock x:Name="ProcessingText" Grid.Column="2" Text="⌛" FontSize="13"
-                                                       Foreground="#F4AB3A" Visibility="Collapsed"
-                                                       HorizontalAlignment="Right" VerticalAlignment="Center"
+                                            <TextBlock x:Name="ProcessingText"
+                                                       Grid.Column="2"
+                                                       Text="..."
+                                                       FontSize="13"
+                                                       Foreground="#F4AB3A"
+                                                       Visibility="Collapsed"
+                                                       HorizontalAlignment="Right"
+                                                       VerticalAlignment="Center"
                                                        Panel.ZIndex="2"/>
-                                            <Button x:Name="KillButton" Grid.Column="2" Visibility="Collapsed"
-                                                    Width="{StaticResource Glass.Metrics.KillButton}"
-                                                    Height="{StaticResource Glass.Metrics.KillButton}"
-                                                    HorizontalAlignment="Right" VerticalAlignment="Center"
+                                            <Button x:Name="KillButton"
+                                                    Grid.Column="2"
+                                                    Visibility="Collapsed"
+                                                    Style="{StaticResource GlassRowKillIconButtonExtracted}"
+                                                    Content="X"
+                                                    HorizontalAlignment="Right"
+                                                    VerticalAlignment="Center"
                                                     Panel.ZIndex="1"
-                                                    Background="{StaticResource Danger}"
-                                                    BorderThickness="0" Cursor="Hand"
                                                     ToolTip="Stop container"
                                                     PreviewMouseLeftButtonDown="KillDockerPort_Click"
-                                                    Tag="{Binding}">
-                                                <Button.Template>
-                                                    <ControlTemplate TargetType="Button">
-                                                        <Border Background="{TemplateBinding Background}"
-                                                                CornerRadius="{StaticResource Glass.Metrics.KillCornerRadius}">
-                                                            <TextBlock Text="✕" FontSize="9" Foreground="White"
-                                                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                                        </Border>
-                                                    </ControlTemplate>
-                                                </Button.Template>
-                                            </Button>
+                                                    Tag="{Binding}"/>
                                         </Grid>
-                                        <Grid x:Name="ConfirmRow" Visibility="Collapsed"
+                                        <Grid x:Name="ConfirmRow"
+                                              Visibility="Collapsed"
                                               MinHeight="{StaticResource Glass.Metrics.RowMinHeight}">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="14"/>
                                                 <ColumnDefinition Width="*"/>
                                                 <ColumnDefinition Width="Auto"/>
                                             </Grid.ColumnDefinitions>
-                                            <TextBlock Grid.Column="1" VerticalAlignment="Center" FontSize="11" FontWeight="SemiBold"
-                                                       TextTrimming="CharacterEllipsis" Foreground="{StaticResource Text.Primary}">
+                                            <TextBlock Grid.Column="1"
+                                                       VerticalAlignment="Center"
+                                                       Style="{StaticResource GlassTextPrimaryShadow}"
+                                                       FontSize="11"
+                                                       FontWeight="SemiBold"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       Foreground="{StaticResource Text.Primary}">
                                                 <Run Text="Kill "/>
                                                 <Run Text="{Binding ContainerName}"/>
                                                 <Run Text="?"/>
                                             </TextBlock>
-                                            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,4,0">
-                                                <Button Content="Kill" Style="{StaticResource GlassRowKillButton}"
-                                                        Click="ConfirmDockerKill_Click" Tag="{Binding}"/>
-                                                <Button Style="{StaticResource GlassRowDismissButton}"
-                                                        Click="CancelDockerKill_Click" Tag="{Binding}"/>
+                                            <StackPanel Grid.Column="2"
+                                                        Orientation="Horizontal"
+                                                        VerticalAlignment="Center"
+                                                        Margin="0,0,4,0">
+                                                <Button Content="Kill"
+                                                        Style="{StaticResource GlassRowKillButtonExtracted}"
+                                                        Click="ConfirmDockerKill_Click"
+                                                        Tag="{Binding}"/>
+                                                <Button Content="X"
+                                                        Style="{StaticResource GlassRowDismissButtonExtracted}"
+                                                        Click="CancelDockerKill_Click"
+                                                        Tag="{Binding}"/>
                                             </StackPanel>
                                         </Grid>
                                     </Grid>
@@ -336,10 +427,14 @@
                             </ListBox.ItemTemplate>
                         </ListBox>
 
-                        <TextBlock x:Name="LocalEmptyStateText" Text="No local ports listening"
-                                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                        <TextBlock x:Name="LocalEmptyStateText"
+                                   Text="No local ports listening"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"
                                    Foreground="{StaticResource Text.Secondary}"
-                                   IsHitTestVisible="False" Panel.ZIndex="0">
+                                   Effect="{StaticResource Text.Shadow}"
+                                   IsHitTestVisible="False"
+                                   Panel.ZIndex="0">
                             <TextBlock.Style>
                                 <Style TargetType="TextBlock">
                                     <Setter Property="Visibility" Value="Collapsed"/>
@@ -355,10 +450,14 @@
                                 </Style>
                             </TextBlock.Style>
                         </TextBlock>
-                        <TextBlock x:Name="DockerEmptyStateText" Text="No published Docker TCP ports"
-                                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                        <TextBlock x:Name="DockerEmptyStateText"
+                                   Text="No published Docker TCP ports"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"
                                    Foreground="{StaticResource Text.Secondary}"
-                                   IsHitTestVisible="False" Panel.ZIndex="0">
+                                   Effect="{StaticResource Text.Shadow}"
+                                   IsHitTestVisible="False"
+                                   Panel.ZIndex="0">
                             <TextBlock.Style>
                                 <Style TargetType="TextBlock">
                                     <Setter Property="Visibility" Value="Collapsed"/>
@@ -394,14 +493,22 @@
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="{StaticResource Glass.Align.ShortcutColumn}"/>
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0" Text="✕" Style="{StaticResource GlassFooterIcon}"
+                                <TextBlock Grid.Column="0"
+                                           Text="&#xE74D;"
+                                           FontFamily="Segoe Fluent Icons"
+                                           Style="{StaticResource GlassFooterIcon}"
                                            Foreground="{StaticResource Danger}"/>
-                                <TextBlock Grid.Column="1" Text="Kill All" Style="{StaticResource GlassFooterLabel}"
-                                           Foreground="{StaticResource Danger}" Margin="8,0,0,0"/>
+                                <TextBlock Grid.Column="1"
+                                           Text="Kill All"
+                                           Style="{StaticResource GlassFooterLabel}"
+                                           Foreground="{StaticResource Danger}"
+                                           Margin="8,0,0,0"/>
                                 <TextBlock Grid.Column="2" Text="Ctrl+K" Style="{StaticResource GlassFooterShortcut}"/>
                             </Grid>
                         </Button>
-                        <Rectangle Height="1" Fill="{StaticResource Glass.Stroke}" Opacity="0.4"
+                        <Rectangle Height="1"
+                                   Fill="{StaticResource Glass.Stroke}"
+                                   Opacity="0.4"
                                    Margin="{StaticResource Glass.Metrics.FooterSeparatorMargin}"/>
                         <Button x:Name="RefreshButton" Click="RefreshButton_Click" Style="{StaticResource GlassFooterButton}">
                             <Grid Style="{StaticResource GlassCompactRowGrid}">
@@ -410,22 +517,36 @@
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="{StaticResource Glass.Align.ShortcutColumn}"/>
                                 </Grid.ColumnDefinitions>
-                                <TextBlock x:Name="RefreshIcon" Grid.Column="0" Text="↻" Style="{StaticResource GlassFooterIcon}"/>
-                                <TextBlock x:Name="RefreshStatusText" Grid.Column="1" Text="Refresh"
-                                           Style="{StaticResource GlassFooterLabel}" Margin="8,0,0,0"/>
+                                <TextBlock x:Name="RefreshIcon"
+                                           Grid.Column="0"
+                                           Text="&#xE72C;"
+                                           FontFamily="Segoe Fluent Icons"
+                                           Style="{StaticResource GlassFooterIcon}"/>
+                                <TextBlock x:Name="RefreshStatusText"
+                                           Grid.Column="1"
+                                           Text="Refresh"
+                                           Style="{StaticResource GlassFooterLabel}"
+                                           Margin="8,0,0,0"/>
                                 <TextBlock Grid.Column="2" Text="Ctrl+R" Style="{StaticResource GlassFooterShortcut}"/>
                             </Grid>
                         </Button>
-                        <Button Click="HideToTray_Click" Style="{StaticResource GlassFooterButtonLast}"
-                                ToolTip="Hide menu — PortCheck keeps running in the system tray">
+                        <Button Click="HideToTray_Click"
+                                Style="{StaticResource GlassFooterButtonLast}"
+                                ToolTip="Hide menu. PortCheck keeps running in the system tray">
                             <Grid Style="{StaticResource GlassCompactRowGrid}">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="{StaticResource Glass.Align.IconColumn}"/>
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="{StaticResource Glass.Align.ShortcutColumn}"/>
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0" Text="▾" Style="{StaticResource GlassFooterIcon}"/>
-                                <TextBlock Grid.Column="1" Text="Hide" Style="{StaticResource GlassFooterLabel}" Margin="8,0,0,0"/>
+                                <TextBlock Grid.Column="0"
+                                            Text="&#xE738;"
+                                            FontFamily="Segoe Fluent Icons"
+                                            Style="{StaticResource GlassFooterIcon}"/>
+                                <TextBlock Grid.Column="1"
+                                           Text="Hide"
+                                           Style="{StaticResource GlassFooterLabel}"
+                                           Margin="8,0,0,0"/>
                                 <TextBlock Grid.Column="2" Text="Esc" Style="{StaticResource GlassFooterShortcut}"/>
                             </Grid>
                         </Button>
