@@ -46,6 +46,12 @@ public partial class TrayViewModel : ObservableObject
     [ObservableProperty]
     private bool _isDockerSurfaceVisible;
 
+    [ObservableProperty]
+    private PortListSortField _sortField = PortListSortField.Port;
+
+    [ObservableProperty]
+    private bool _sortDescending;
+
     public int RefreshIntervalSeconds { get; }
 
     public int LocalPortCount => LocalPorts.Count;
@@ -74,6 +80,10 @@ public partial class TrayViewModel : ObservableObject
     }
 
     partial void OnSearchQueryChanged(string value) => ApplyFilter();
+
+    partial void OnSortFieldChanged(PortListSortField value) => ApplyFilter();
+
+    partial void OnSortDescendingChanged(bool value) => ApplyFilter();
 
     partial void OnActivePaneChanged(PortPane value)
     {
@@ -291,7 +301,7 @@ public partial class TrayViewModel : ObservableObject
 
             ReconcileCollection(
                 FilteredDockerPorts,
-                dockerSource.ToList(),
+                SortDockerRows(dockerSource).ToList(),
                 row => (row.ContainerId, row.HostPort, row.ContainerPort, row.HostAddress, row.Protocol));
             OnPropertyChanged(nameof(ActivePanePortCount));
             return;
@@ -308,7 +318,7 @@ public partial class TrayViewModel : ObservableObject
 
         ReconcileCollection(
             FilteredLocalPorts,
-            localSource.ToList(),
+            SortLocalRows(localSource).ToList(),
             port => (port.Pid, port.Port, port.Address));
         OnPropertyChanged(nameof(LocalPortCount));
         OnPropertyChanged(nameof(ActivePanePortCount));
@@ -355,6 +365,34 @@ public partial class TrayViewModel : ObservableObject
             .ThenBy(row => row.HostAddress, StringComparer.OrdinalIgnoreCase)
             .ToList();
     }
+
+    private IEnumerable<PortInfo> SortLocalRows(IEnumerable<PortInfo> source) =>
+        SortField switch
+        {
+            PortListSortField.ProcessName => SortDescending
+                ? source.OrderByDescending(p => p.ProcessName, StringComparer.OrdinalIgnoreCase).ThenByDescending(p => p.Port)
+                : source.OrderBy(p => p.ProcessName, StringComparer.OrdinalIgnoreCase).ThenBy(p => p.Port),
+            PortListSortField.Pid => SortDescending
+                ? source.OrderByDescending(p => p.Pid).ThenByDescending(p => p.Port)
+                : source.OrderBy(p => p.Pid).ThenBy(p => p.Port),
+            _ => SortDescending
+                ? source.OrderByDescending(p => p.Port).ThenByDescending(p => p.ProcessName, StringComparer.OrdinalIgnoreCase)
+                : source.OrderBy(p => p.Port).ThenBy(p => p.ProcessName, StringComparer.OrdinalIgnoreCase)
+        };
+
+    private IEnumerable<DockerPortInfo> SortDockerRows(IEnumerable<DockerPortInfo> source) =>
+        SortField switch
+        {
+            PortListSortField.ProcessName => SortDescending
+                ? source.OrderByDescending(p => p.ContainerName, StringComparer.OrdinalIgnoreCase).ThenByDescending(p => p.HostPort)
+                : source.OrderBy(p => p.ContainerName, StringComparer.OrdinalIgnoreCase).ThenBy(p => p.HostPort),
+            PortListSortField.Pid => SortDescending
+                ? source.OrderByDescending(p => p.SourcePid ?? 0).ThenByDescending(p => p.HostPort)
+                : source.OrderBy(p => p.SourcePid ?? 0).ThenBy(p => p.HostPort),
+            _ => SortDescending
+                ? source.OrderByDescending(p => p.HostPort).ThenBy(p => p.HostAddress, StringComparer.OrdinalIgnoreCase)
+                : source.OrderBy(p => p.HostPort).ThenBy(p => p.HostAddress, StringComparer.OrdinalIgnoreCase)
+        };
 
     private static void ReconcileCollection<TItem, TKey>(
         ObservableCollection<TItem> target,

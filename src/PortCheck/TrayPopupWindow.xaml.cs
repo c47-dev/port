@@ -1,8 +1,12 @@
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
+using System.Windows.Media.Imaging;
+using System.Windows.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using PortCheck.Helpers;
 using PortCheck.Models;
@@ -15,6 +19,7 @@ public partial class TrayPopupWindow : Window
     private readonly TrayViewModel _viewModel;
     private bool _isProcessingAction;
     private bool _isManualRefresh;
+    private Popup? _sortMenuPopup;
     private PortPane? _lastAnimatedPane;
     private Rect? _cachedBackdropRect;
     private ImageSource? _cachedBackdropImage;
@@ -37,7 +42,9 @@ public partial class TrayPopupWindow : Window
             _lastAnimatedPane = _viewModel.ActivePane;
             UpdateSearchPlaceholder();
             ApplyRoundedClips();
-            await Dispatcher.InvokeAsync(() => { });
+            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+            if (IsCaptureSession)
+                await CaptureScreenshotAndShutdownAsync();
         };
 
         SizeChanged += (_, _) => ApplyRoundedClips();
@@ -231,9 +238,53 @@ public partial class TrayPopupWindow : Window
 
     private void Window_Deactivated(object sender, EventArgs e)
     {
-        if (_isProcessingAction)
+        if (_isProcessingAction || IsCaptureSession)
             return;
         HideToTray();
+    }
+
+    private static bool IsCaptureSession =>
+        Environment.GetCommandLineArgs().Any(arg =>
+            string.Equals(arg, "--show-popup", StringComparison.OrdinalIgnoreCase));
+
+    private async Task CaptureScreenshotAndShutdownAsync()
+    {
+        await Task.Delay(600);
+        UpdateLayout();
+
+        var width = (int)Math.Ceiling(ActualWidth);
+        var height = (int)Math.Ceiling(ActualHeight);
+        if (width <= 0 || height <= 0)
+            return;
+
+        var capturePath = ResolveCaptureOutputPath();
+        Directory.CreateDirectory(Path.GetDirectoryName(capturePath)!);
+
+        var bitmap = new RenderTargetBitmap(width, height, 96, 96, PixelFormats.Pbgra32);
+        bitmap.Render(this);
+
+        var encoder = new PngBitmapEncoder();
+        encoder.Frames.Add(BitmapFrame.Create(bitmap));
+        await using (var stream = File.Create(capturePath))
+            encoder.Save(stream);
+
+        Application.Current.Shutdown();
+    }
+
+    private static string ResolveCaptureOutputPath()
+    {
+        foreach (var arg in Environment.GetCommandLineArgs())
+        {
+            const string prefix = "--capture-to=";
+            if (arg.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+                return Path.GetFullPath(arg[prefix.Length..]);
+        }
+
+        return Path.GetFullPath(Path.Combine(
+            AppContext.BaseDirectory,
+            "..", "..", "..", "..", "..",
+            "artifacts",
+            "popup-capture.png"));
     }
 
     private async void KillAll_Click(object sender, RoutedEventArgs e) => await KillAllWithConfirm();
@@ -273,6 +324,118 @@ public partial class TrayPopupWindow : Window
     }
 
     private void HideToTray_Click(object sender, RoutedEventArgs e) => HideToTray();
+
+    private void SortFilterButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_sortMenuPopup is { IsOpen: true })
+        {
+            _sortMenuPopup.IsOpen = false;
+            return;
+        }
+
+        var panel = new StackPanel();
+        panel.Children.Add(CreatePopupMenuButton("Port", _viewModel.SortField == PortListSortField.Port,
+            () => _viewModel.SortField = PortListSortField.Port, new CornerRadius(8, 8, 4, 4)));
+        panel.Children.Add(CreatePopupMenuButton("Process name", _viewModel.SortField == PortListSortField.ProcessName,
+            () => _viewModel.SortField = PortListSortField.ProcessName, new CornerRadius(4, 4, 4, 4)));
+        panel.Children.Add(CreatePopupMenuButton("PID", _viewModel.SortField == PortListSortField.Pid,
+            () => _viewModel.SortField = PortListSortField.Pid, new CornerRadius(4, 4, 4, 4)));
+        panel.Children.Add(CreatePopupMenuDivider());
+        panel.Children.Add(CreatePopupMenuButton("Ascending", _viewModel.SortDescending == false,
+            () => _viewModel.SortDescending = false, new CornerRadius(4, 4, 4, 4)));
+        panel.Children.Add(CreatePopupMenuButton("Descending", _viewModel.SortDescending,
+            () => _viewModel.SortDescending = true, new CornerRadius(4, 4, 8, 8)));
+
+        var shell = new Border { Child = panel };
+        shell.SetResourceReference(StyleProperty, "GlassPopupMenuShell");
+
+        _sortMenuPopup = new Popup
+        {
+            Child = shell,
+            PlacementTarget = SortFilterButton,
+            Placement = PlacementMode.Bottom,
+            VerticalOffset = 6,
+            HorizontalOffset = -138,
+            AllowsTransparency = true,
+            StaysOpen = false,
+            PopupAnimation = PopupAnimation.Fade
+        };
+
+        _sortMenuPopup.Opened += (_, _) => _isProcessingAction = true;
+        _sortMenuPopup.Closed += (_, _) =>
+        {
+            _isProcessingAction = false;
+            _sortMenuPopup = null;
+        };
+
+        _sortMenuPopup.IsOpen = true;
+    }
+
+    private Button CreatePopupMenuButton(string label, bool isSelected, Action onSelect, CornerRadius cornerRadius)
+    {
+        var button = new Button
+        {
+            Content = CreatePopupMenuItemContent(label, isSelected),
+            BorderThickness = new Thickness(0),
+            Tag = isSelected ? "Selected" : null
+        };
+        button.SetResourceReference(StyleProperty, "GlassPopupMenuButton");
+        button.Loaded += (_, _) => ApplyPopupMenuItemCornerRadius(button, cornerRadius);
+        button.Click += (_, _) =>
+        {
+            onSelect();
+            _sortMenuPopup?.SetCurrentValue(Popup.IsOpenProperty, false);
+        };
+        return button;
+    }
+
+    private static void ApplyPopupMenuItemCornerRadius(Button button, CornerRadius cornerRadius)
+    {
+        button.ApplyTemplate();
+        if (button.Template.FindName("Bd", button) is Border border)
+            border.CornerRadius = cornerRadius;
+    }
+
+    private static Grid CreatePopupMenuItemContent(string label, bool isSelected)
+    {
+        var grid = new Grid();
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+        var text = new TextBlock
+        {
+            Text = label,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        text.SetResourceReference(TextBlock.ForegroundProperty, "Text.Primary");
+        text.SetResourceReference(TextBlock.EffectProperty, "Text.Shadow");
+        grid.Children.Add(text);
+
+        if (isSelected)
+        {
+            var check = new TextBlock
+            {
+                Text = "\uE73E",
+                FontFamily = new FontFamily("Segoe Fluent Icons"),
+                FontSize = 12,
+                Margin = new Thickness(8, 0, 0, 0),
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            check.SetResourceReference(TextBlock.ForegroundProperty, "Text.Primary");
+            check.SetResourceReference(TextBlock.EffectProperty, "Text.Shadow");
+            Grid.SetColumn(check, 1);
+            grid.Children.Add(check);
+        }
+
+        return grid;
+    }
+
+    private Border CreatePopupMenuDivider()
+    {
+        var divider = new Border();
+        divider.SetResourceReference(StyleProperty, "GlassPopupMenuDivider");
+        return divider;
+    }
 
     private void HideToTray()
     {

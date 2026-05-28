@@ -36,16 +36,18 @@
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
-                    <Grid Grid.Row="0" Margin="16,16,16,6">
+                    <Grid Grid.Row="0" Margin="12,16,12,6">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         <Border Background="{StaticResource Search.Fill}"
-                                CornerRadius="12"
+                                CornerRadius="{StaticResource Glass.Metrics.ChromeCapsuleRadius}"
                                 BorderBrush="{StaticResource Search.Stroke}"
                                 BorderThickness="1"
-                                Height="30">
+                                Height="{StaticResource Glass.Metrics.ChromeRowHeight}"
+                                Margin="0,0,8,0"
+                                SnapsToDevicePixels="True">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto"/>
@@ -70,12 +72,12 @@
                                          Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged}"/>
                                 <TextBlock x:Name="SearchPlaceholder"
                                            Grid.Column="1"
-                                           Text="Search local ports"
+                                           Text="Search local ports…"
                                            IsHitTestVisible="False"
                                            Foreground="{StaticResource Text.Secondary}"
                                            Effect="{StaticResource Text.Shadow}"
                                            VerticalAlignment="Center"
-                                           Margin="2,0,0,0"
+                                           Margin="2,0,10,0"
                                            FontSize="12">
                                     <TextBlock.Style>
                                         <Style TargetType="TextBlock">
@@ -90,21 +92,19 @@
                                 </TextBlock>
                             </Grid>
                         </Border>
-                        <Border Grid.Column="1"
-                                Background="#35FFFFFF"
-                                CornerRadius="10"
-                                Margin="10,2,2,0"
-                                Padding="8,2"
-                                VerticalAlignment="Top"
-                                MinWidth="28"
-                                BorderBrush="#50FFFFFF"
-                                BorderThickness="1">
-                            <TextBlock Text="{Binding ActivePanePortCount}"
-                                       FontSize="11"
-                                       FontWeight="Bold"
+                        <Button x:Name="SortFilterButton"
+                                Grid.Column="1"
+                                Style="{StaticResource GlassSortFilterButton}"
+                                ToolTip="Sort and filter"
+                                Click="SortFilterButton_Click">
+                            <TextBlock Text="&#xE8CB;"
+                                       FontFamily="Segoe Fluent Icons"
+                                       FontSize="12"
                                        Foreground="{StaticResource Text.Primary}"
-                                       HorizontalAlignment="Center"/>
-                        </Border>
+                                       Effect="{StaticResource Text.Shadow}"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"/>
+                        </Button>
                     </Grid>
 
                     <ScrollViewer Grid.Row="1"
@@ -147,7 +147,7 @@
                                  VirtualizingPanel.ScrollUnit="Pixel"
                                  PreviewMouseWheel="PortsList_PreviewMouseWheel"
                                  VerticalAlignment="Stretch"
-                                 Padding="0,0,6,8">
+                                 Padding="0,0,0,8">
                             <ListBox.Style>
                                 <Style TargetType="ListBox">
                                     <Setter Property="Visibility" Value="Visible"/>
@@ -182,7 +182,7 @@
                                  VirtualizingPanel.ScrollUnit="Pixel"
                                  PreviewMouseWheel="PortsList_PreviewMouseWheel"
                                  VerticalAlignment="Stretch"
-                                 Padding="0,0,6,8">
+                                 Padding="0,0,0,8">
                             <ListBox.Style>
                                 <Style TargetType="ListBox">
                                     <Setter Property="Visibility" Value="Collapsed"/>
@@ -251,7 +251,7 @@
                         </TextBlock>
                     </Grid>
 
-                    <StackPanel Grid.Row="3" Margin="12,6,12,4">
+                    <StackPanel Grid.Row="3" Margin="{StaticResource Glass.Align.FooterGutter}">
                         <Button Click="KillAll_Click">
                             <Button.Style>
                                 <Style TargetType="Button" BasedOn="{StaticResource GlassFooterButton}">
@@ -269,23 +269,37 @@
                                                      IconForeground="{StaticResource Danger}"
                                                      LabelForeground="{StaticResource Danger}"/>
                         </Button>
-                        <Rectangle Height="1"
-                                   Fill="{StaticResource Glass.Stroke}"
-                                   Opacity="0.4"
-                                   Margin="{StaticResource Glass.Metrics.FooterSeparatorMargin}"/>
-                        <Button x:Name="RefreshButton" Click="RefreshButton_Click" Style="{StaticResource GlassFooterButton}">
-                            <controls:PopupActionRow x:Name="RefreshActionRow"
-                                                     IconText="&#xE72C;"
-                                                     LabelText="Refresh"
-                                                     ShortcutText="Ctrl+R"/>
-                        </Button>
-                        <Button Click="HideToTray_Click"
-                                Style="{StaticResource GlassFooterButtonLast}"
-                                ToolTip="Hide menu. PortCheck keeps running in the system tray">
-                            <controls:PopupActionRow IconText="&#xE738;"
-                                                     LabelText="Hide"
-                                                     ShortcutText="Esc"/>
-                        </Button>
+                        <Border>
+                            <Border.Style>
+                                <Style TargetType="Border" BasedOn="{StaticResource GlassFooterDivider}">
+                                    <Setter Property="Margin" Value="0,8,0,0"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding ActivePane}" Value="{x:Static models:PortPane.Docker}">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                        </Border>
+                        <Border Padding="{StaticResource Glass.Metrics.FooterChromePadding}">
+                            <StackPanel>
+                                <Button x:Name="RefreshButton"
+                                        Click="RefreshButton_Click"
+                                        Style="{StaticResource GlassFooterButton}">
+                                    <controls:PopupActionRow x:Name="RefreshActionRow"
+                                                             IconText="&#xE72C;"
+                                                             LabelText="Refresh"
+                                                             ShortcutText="Ctrl+R"/>
+                                </Button>
+                                <Button Click="HideToTray_Click"
+                                        Style="{StaticResource GlassFooterButton}"
+                                        ToolTip="Hide menu. PortCheck keeps running in the system tray">
+                                    <controls:PopupActionRow IconText="&#xE738;"
+                                                             LabelText="Hide"
+                                                             ShortcutText="Esc"/>
+                                </Button>
+                            </StackPanel>
+                        </Border>
                     </StackPanel>
                 </Grid>
             </Border>

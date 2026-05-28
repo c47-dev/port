@@ -43,12 +43,17 @@
     <!-- Alignment grid: columns line up; each surface keeps its own radius / padding / height. -->
     <system:Double x:Key="Glass.Align.ContentInset" xmlns:system="clr-namespace:System;assembly=mscorlib">12</system:Double>
     <Thickness x:Key="Glass.Align.HorizontalGutter">12,0,12,0</Thickness>
-    <Thickness x:Key="Glass.Align.ListGutter">12,0,12,0</Thickness>
+    <Thickness x:Key="Glass.Align.ListGutter">12,0,6,0</Thickness>
+    <Thickness x:Key="Glass.Align.FooterGutter">12,0,12,0</Thickness>
     <GridLength x:Key="Glass.Align.IconColumn">20</GridLength>
     <GridLength x:Key="Glass.Align.PortColumn">56</GridLength>
     <GridLength x:Key="Glass.Align.ShortcutColumn">44</GridLength>
     <system:Double x:Key="Glass.Align.IconWidth" xmlns:system="clr-namespace:System;assembly=mscorlib">20</system:Double>
     <system:Double x:Key="Glass.Align.ShortcutWidth" xmlns:system="clr-namespace:System;assembly=mscorlib">44</system:Double>
+
+    <system:Double x:Key="Glass.Metrics.ChromeRowHeight" xmlns:system="clr-namespace:System;assembly=mscorlib">32</system:Double>
+    <CornerRadius x:Key="Glass.Metrics.ChromeCapsuleRadius">16</CornerRadius>
+    <system:Double x:Key="Glass.Metrics.ChromeRowGap" xmlns:system="clr-namespace:System;assembly=mscorlib">8</system:Double>
 
     <system:Double x:Key="Glass.Metrics.TabHeight" xmlns:system="clr-namespace:System;assembly=mscorlib">32</system:Double>
     <GridLength x:Key="Glass.Metrics.TabIconSlot">32</GridLength>
@@ -63,10 +68,13 @@
     <Thickness x:Key="Glass.Metrics.ListSurfaceInset">0,0,0,1</Thickness>
 
     <Thickness x:Key="Glass.Metrics.FooterContentPadding">6,2</Thickness>
-    <Thickness x:Key="Glass.Metrics.FooterRowSpacing">0</Thickness>
+    <Thickness x:Key="Glass.Metrics.FooterChromePadding">0,8,0,8</Thickness>
     <CornerRadius x:Key="Glass.Metrics.FooterHoverRadius">8</CornerRadius>
-    <CornerRadius x:Key="Glass.Metrics.FooterLastHoverRadius">8,8,14,14</CornerRadius>
-    <Thickness x:Key="Glass.Metrics.FooterSeparatorMargin">0,4,0,4</Thickness>
+
+    <CornerRadius x:Key="Glass.Metrics.PopupMenuCornerRadius">12</CornerRadius>
+    <Thickness x:Key="Glass.Metrics.PopupMenuPadding">4</Thickness>
+    <CornerRadius x:Key="Glass.Metrics.PopupMenuItemCornerRadius">8</CornerRadius>
+    <Thickness x:Key="Glass.Metrics.PopupMenuItemPadding">10,6</Thickness>
 
     <system:Double x:Key="Glass.Metrics.DockerMarkWidth" xmlns:system="clr-namespace:System;assembly=mscorlib">15</system:Double>
     <system:Double x:Key="Glass.Metrics.DockerMarkHeight" xmlns:system="clr-namespace:System;assembly=mscorlib">12</system:Double>
@@ -140,6 +148,105 @@
                 <Setter Property="MinHeight" Value="4"/>
             </Trigger>
         </Style.Triggers>
+    </Style>
+
+    <Style x:Key="GlassSortFilterButton" TargetType="Button">
+        <Setter Property="Width" Value="{StaticResource Glass.Metrics.ChromeRowHeight}"/>
+        <Setter Property="Height" Value="{StaticResource Glass.Metrics.ChromeRowHeight}"/>
+        <Setter Property="Padding" Value="0"/>
+        <Setter Property="Background" Value="{StaticResource PaneTab.Idle.Fill}"/>
+        <Setter Property="BorderBrush" Value="#45FFFFFF"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Bd"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="999"
+                            SnapsToDevicePixels="True"
+                            UseLayoutRounding="True">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="#40FFFFFF"/>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource PaneTab.Active.Fill}"/>
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource PaneTab.Active.Stroke}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="GlassPopupMenuShell" TargetType="Border">
+        <Setter Property="Background" Value="{StaticResource PaneTab.Active.Fill}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource PaneTab.Active.Stroke}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="{StaticResource Glass.Metrics.PopupMenuCornerRadius}"/>
+        <Setter Property="Padding" Value="{StaticResource Glass.Metrics.PopupMenuPadding}"/>
+        <Setter Property="MinWidth" Value="168"/>
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+        <Setter Property="Effect">
+            <Setter.Value>
+                <DropShadowEffect Color="#55000000" Opacity="0.28" BlurRadius="24" ShadowDepth="8"/>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="GlassPopupMenuButton" TargetType="Button">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Foreground" Value="{StaticResource Text.Primary}"/>
+        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="Padding" Value="0"/>
+        <Setter Property="Margin" Value="0"/>
+        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Bd"
+                            Background="Transparent"
+                            BorderBrush="Transparent"
+                            BorderThickness="1"
+                            Padding="{StaticResource Glass.Metrics.PopupMenuItemPadding}"
+                            CornerRadius="{StaticResource Glass.Metrics.PopupMenuItemCornerRadius}"
+                            SnapsToDevicePixels="True">
+                        <ContentPresenter HorizontalAlignment="Stretch" VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource Hover.Surface}"/>
+                        </Trigger>
+                        <Trigger Property="Tag" Value="Selected">
+                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource PaneTab.Active.Fill}"/>
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource PaneTab.Active.Stroke}"/>
+                            <Setter TargetName="Bd" Property="BorderThickness" Value="1"/>
+                            <Setter Property="FontWeight" Value="SemiBold"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="GlassPopupMenuDivider" TargetType="Border">
+        <Setter Property="Height" Value="1"/>
+        <Setter Property="Margin" Value="8,4,8,4"/>
+        <Setter Property="Opacity" Value="0.45"/>
+        <Setter Property="Background" Value="{StaticResource Glass.Stroke}"/>
+    </Style>
+
+    <Style x:Key="GlassFooterDivider" TargetType="Border" BasedOn="{StaticResource GlassPopupMenuDivider}">
+        <Setter Property="Margin" Value="0,8,0,0"/>
     </Style>
 
     <Style x:Key="GlassPillButton" TargetType="Button">
@@ -244,7 +351,7 @@
         <Setter Property="BorderThickness" Value="0"/>
         <Setter Property="Foreground" Value="{StaticResource Text.Primary}"/>
         <Setter Property="Padding" Value="0"/>
-        <Setter Property="Margin" Value="{StaticResource Glass.Metrics.FooterRowSpacing}"/>
+        <Setter Property="Margin" Value="0"/>
         <Setter Property="MinHeight" Value="{StaticResource Glass.Metrics.RowMinHeight}"/>
         <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
         <Setter Property="Cursor" Value="Hand"/>
@@ -257,29 +364,6 @@
                             Padding="{StaticResource Glass.Metrics.FooterContentPadding}"
                             CornerRadius="{StaticResource Glass.Metrics.FooterHoverRadius}"
                             MinHeight="{StaticResource Glass.Metrics.RowMinHeight}">
-                        <ContentPresenter VerticalAlignment="Center"/>
-                    </Border>
-                    <ControlTemplate.Triggers>
-                        <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource Hover.Surface}"/>
-                        </Trigger>
-                    </ControlTemplate.Triggers>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-    </Style>
-
-    <Style x:Key="GlassFooterButtonLast" TargetType="Button" BasedOn="{StaticResource GlassFooterButton}">
-        <Setter Property="Margin" Value="0"/>
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="Button">
-                    <Border x:Name="Bd"
-                            Background="Transparent"
-                            Padding="{StaticResource Glass.Metrics.FooterContentPadding}"
-                            CornerRadius="{StaticResource Glass.Metrics.FooterLastHoverRadius}"
-                            MinHeight="{StaticResource Glass.Metrics.RowMinHeight}"
-                            Margin="0,0,0,2">
                         <ContentPresenter VerticalAlignment="Center"/>
                     </Border>
                     <ControlTemplate.Triggers>

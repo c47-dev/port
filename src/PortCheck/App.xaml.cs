@@ -34,6 +34,9 @@ public partial class App : Application
 
         var vm = Services.GetRequiredService<TrayViewModel>();
         await vm.InitializeAsync();
+
+        if (e.Args.Any(arg => string.Equals(arg, "--show-popup", StringComparison.OrdinalIgnoreCase)))
+            host.ShowPopup();
     }
 
     protected override void OnExit(ExitEventArgs e)
