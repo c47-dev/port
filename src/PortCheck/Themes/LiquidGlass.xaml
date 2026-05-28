@@ -45,6 +45,7 @@
     <Thickness x:Key="Glass.Align.HorizontalGutter">12,0,12,0</Thickness>
     <Thickness x:Key="Glass.Align.ListGutter">12,0,6,0</Thickness>
     <Thickness x:Key="Glass.Align.FooterGutter">12,0,12,0</Thickness>
+    <Thickness x:Key="Glass.Align.ChromeGutter">12,12,12,10</Thickness>
     <GridLength x:Key="Glass.Align.IconColumn">20</GridLength>
     <GridLength x:Key="Glass.Align.PortColumn">56</GridLength>
     <GridLength x:Key="Glass.Align.ShortcutColumn">44</GridLength>
@@ -185,6 +186,8 @@
         </Setter>
     </Style>
 
+    <Style x:Key="GlassChromeIconButton" TargetType="Button" BasedOn="{StaticResource GlassSortFilterButton}"/>
+
     <Style x:Key="GlassPopupMenuShell" TargetType="Border">
         <Setter Property="Background" Value="{StaticResource PaneTab.Active.Fill}"/>
         <Setter Property="BorderBrush" Value="{StaticResource PaneTab.Active.Stroke}"/>
@@ -270,6 +273,106 @@
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="Bd" Property="Background" Value="#58FFFFFF"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="GlassCapsuleActionButton" TargetType="Button" BasedOn="{StaticResource GlassPillButton}">
+        <Setter Property="MinWidth" Value="68"/>
+        <Setter Property="Height" Value="{StaticResource Glass.Metrics.ChromeRowHeight}"/>
+        <Setter Property="Padding" Value="16,0"/>
+        <Setter Property="Background" Value="{StaticResource PaneTab.Idle.Fill}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Bd"
+                            Background="{TemplateBinding Background}"
+                            CornerRadius="999"
+                            Padding="{TemplateBinding Padding}"
+                            BorderBrush="#55FFFFFF"
+                            BorderThickness="1"
+                            SnapsToDevicePixels="True">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="#58FFFFFF"/>
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource PaneTab.Active.Stroke}"/>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource PaneTab.Active.Fill}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="GlassCapsuleActionButtonRounded" TargetType="Button" BasedOn="{StaticResource GlassCapsuleActionButton}">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Bd"
+                            Background="{TemplateBinding Background}"
+                            CornerRadius="{StaticResource Glass.Metrics.ChromeCapsuleRadius}"
+                            Padding="{TemplateBinding Padding}"
+                            BorderBrush="#55FFFFFF"
+                            BorderThickness="1"
+                            SnapsToDevicePixels="True">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="#58FFFFFF"/>
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource PaneTab.Active.Stroke}"/>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource PaneTab.Active.Fill}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="GlassSectionCardBorder" TargetType="Border">
+        <Setter Property="Background" Value="{StaticResource Glass.List.Surface.Fill}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource Glass.List.Surface.Border}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="{StaticResource Glass.Metrics.ListHoverRadius}"/>
+        <Setter Property="Padding" Value="0"/>
+        <Setter Property="Margin" Value="0,0,0,12"/>
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+    </Style>
+
+    <Style x:Key="GlassSectionDivider" TargetType="Border">
+        <Setter Property="Height" Value="1"/>
+        <Setter Property="Background" Value="#18FFFFFF"/>
+        <Setter Property="Margin" Value="8,0,8,0"/>
+    </Style>
+
+    <Style x:Key="GlassCapsuleDangerButton" TargetType="Button" BasedOn="{StaticResource GlassCapsuleActionButton}">
+        <Setter Property="MinWidth" Value="{StaticResource Glass.Metrics.ChromeRowHeight}"/>
+        <Setter Property="Width" Value="{StaticResource Glass.Metrics.ChromeRowHeight}"/>
+        <Setter Property="Padding" Value="0"/>
+        <Setter Property="Background" Value="{StaticResource Glass.Action.Danger.Fill}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Bd"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{StaticResource Glass.Action.Danger.Stroke}"
+                            BorderThickness="1"
+                            CornerRadius="999"
+                            SnapsToDevicePixels="True">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource Glass.Action.Danger.HoverFill}"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -804,6 +907,11 @@
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
+    </Style>
+
+    <Style x:Key="GlassEmbeddedPortListItem" TargetType="ListBoxItem" BasedOn="{StaticResource GlassPortListItemLocal}">
+        <Setter Property="Padding" Value="8,4"/>
+        <Setter Property="Margin" Value="0"/>
     </Style>
 
 </ResourceDictionary>

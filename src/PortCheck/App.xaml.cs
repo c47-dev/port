@@ -29,11 +29,19 @@ public partial class App : Application
     {
         base.OnStartup(e);
 
-        var host = Services.GetRequiredService<TrayHost>();
-        host.Initialize();
-
         var vm = Services.GetRequiredService<TrayViewModel>();
         await vm.InitializeAsync();
+
+        if (IsCaptureRequest(e.Args))
+        {
+            var popup = Services.GetRequiredService<TrayPopupWindow>();
+            popup.ShowForCapture();
+            await popup.CaptureForValidationAsync();
+            return;
+        }
+
+        var host = Services.GetRequiredService<TrayHost>();
+        host.Initialize();
 
         if (e.Args.Any(arg => string.Equals(arg, "--show-popup", StringComparison.OrdinalIgnoreCase)))
             host.ShowPopup();
@@ -55,6 +63,7 @@ public partial class App : Application
         var cliTimeout = configuration.GetValue("appSettings:dockerCliTimeoutMs", 5000);
         var cliDistribution = configuration.GetValue<string?>("appSettings:dockerCliWslDistribution");
         var skipDockerProxy = configuration.GetValue("appSettings:skipHeavyProcessInfoForDockerProxy", true);
+        var refreshInterval = configuration.GetValue("appSettings:refreshIntervalSeconds", 5);
 
         services.AddSingleton(_ => new DockerEngineClient(pipeName));
         services.AddSingleton(_ => new DockerWslCliClient(cliDistribution, cliTimeout));
@@ -68,18 +77,26 @@ public partial class App : Application
             engineTimeout));
         services.AddSingleton(sp => new PortScannerService(skipDockerProxy));
         services.AddSingleton<ProcessKillerService>();
+        services.AddSingleton(_ => new SettingsService(refreshInterval));
+        services.AddSingleton<ProtectedPortCatalogService>();
+        services.AddSingleton<PortExclusionService>();
 
         services.AddSingleton<TrayViewModel>(sp => new TrayViewModel(
             sp.GetRequiredService<PortScannerService>(),
             sp.GetRequiredService<ProcessKillerService>(),
             sp.GetRequiredService<DockerPortCatalogService>(),
             sp.GetRequiredService<DockerContainerStopService>(),
+            sp.GetRequiredService<SettingsService>(),
+            sp.GetRequiredService<PortExclusionService>(),
             sp.GetRequiredService<IConfiguration>(),
             Current.Dispatcher));
 
         services.AddSingleton<TrayHost>();
         services.AddSingleton<TrayPopupWindow>();
     }
+
+    private static bool IsCaptureRequest(IEnumerable<string> args) =>
+        args.Any(arg => arg.StartsWith("--capture-to=", StringComparison.OrdinalIgnoreCase));
 
     private static IConfiguration BuildConfiguration()
     {

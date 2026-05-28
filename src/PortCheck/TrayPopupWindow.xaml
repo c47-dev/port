@@ -16,6 +16,54 @@
         SnapsToDevicePixels="True"
         Deactivated="Window_Deactivated">
 
+    <Window.Resources>
+        <Style x:Key="SettingsFooterButtonStyle" TargetType="Button" BasedOn="{StaticResource GlassFooterButton}">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd"
+                                Background="Transparent"
+                                Padding="{StaticResource Glass.Metrics.FooterContentPadding}"
+                                CornerRadius="{StaticResource Glass.Metrics.FooterHoverRadius}"
+                                MinHeight="{StaticResource Glass.Metrics.RowMinHeight}">
+                            <ContentPresenter VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource Hover.Surface}"/>
+                            </Trigger>
+                            <DataTrigger Binding="{Binding PopupSurface}" Value="{x:Static models:PopupSurface.Settings}">
+                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource PaneTab.Active.Fill}"/>
+                            </DataTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="SettingsInlineTextBoxStyle" TargetType="TextBox">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Foreground" Value="{StaticResource Text.Primary}"/>
+            <Setter Property="CaretBrush" Value="{StaticResource Text.Primary}"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="MinWidth" Value="52"/>
+        </Style>
+
+        <LinearGradientBrush x:Key="Settings.BlueIconFill" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#FF5AA8FF" Offset="0"/>
+            <GradientStop Color="#FF2F6FC8" Offset="1"/>
+        </LinearGradientBrush>
+
+        <LinearGradientBrush x:Key="Settings.GreenIconFill" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#FF58D777" Offset="0"/>
+            <GradientStop Color="#FF2E9E4B" Offset="1"/>
+        </LinearGradientBrush>
+    </Window.Resources>
+
     <Border x:Name="OuterChromeBorder" CornerRadius="20" ClipToBounds="True" Effect="{StaticResource Glass.WindowShadow}">
         <Grid x:Name="OuterGlassRoot">
             <Image x:Name="BackdropImage" Stretch="Fill" IsHitTestVisible="False"/>
@@ -36,7 +84,19 @@
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
-                    <Grid Grid.Row="0" Margin="12,16,12,6">
+                    <Grid Grid.Row="0"
+                          Margin="{StaticResource Glass.Align.ChromeGutter}"
+                          Height="{StaticResource Glass.Metrics.ChromeRowHeight}">
+                        <Grid.Style>
+                            <Style TargetType="Grid">
+                                <Setter Property="Visibility" Value="Visible"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding PopupSurface}" Value="{x:Static models:PopupSurface.Settings}">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Grid.Style>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
@@ -72,7 +132,7 @@
                                          Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged}"/>
                                 <TextBlock x:Name="SearchPlaceholder"
                                            Grid.Column="1"
-                                           Text="Search local ports…"
+                                           Text="Search local ports"
                                            IsHitTestVisible="False"
                                            Foreground="{StaticResource Text.Secondary}"
                                            Effect="{StaticResource Text.Shadow}"
@@ -107,12 +167,70 @@
                         </Button>
                     </Grid>
 
+                    <Grid Grid.Row="0"
+                          Margin="{StaticResource Glass.Align.ChromeGutter}"
+                          Height="{StaticResource Glass.Metrics.ChromeRowHeight}">
+                        <Grid.Style>
+                            <Style TargetType="Grid">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding PopupSurface}" Value="{x:Static models:PopupSurface.Settings}">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Grid.Style>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <Button x:Name="BackButton"
+                                Width="{StaticResource Glass.Metrics.ChromeRowHeight}"
+                                Height="{StaticResource Glass.Metrics.ChromeRowHeight}"
+                                Margin="0,0,8,0"
+                                Command="{Binding CloseSettingsCommand}"
+                                Style="{StaticResource GlassChromeIconButton}">
+                            <TextBlock Text="&#xE72B;"
+                                       FontFamily="Segoe Fluent Icons"
+                                       FontSize="12"
+                                       Foreground="{StaticResource Text.Primary}"
+                                       Effect="{StaticResource Text.Shadow}"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"/>
+                        </Button>
+                        <StackPanel Grid.Column="1"
+                                    VerticalAlignment="Center"
+                                    HorizontalAlignment="Center">
+                            <TextBlock Text="Settings"
+                                       Style="{StaticResource GlassTextPrimaryShadow}"
+                                       FontSize="12"
+                                       FontWeight="SemiBold"/>
+                        </StackPanel>
+                        <Border Grid.Column="2"
+                                Width="{StaticResource Glass.Metrics.ChromeRowHeight}"
+                                Margin="8,0,0,0"
+                                Background="Transparent"/>
+                    </Grid>
+
                     <ScrollViewer Grid.Row="1"
                                   Margin="12,0,12,8"
                                   Height="36"
                                   HorizontalScrollBarVisibility="Hidden"
-                                  VerticalScrollBarVisibility="Disabled"
-                                  Visibility="{Binding IsDockerSurfaceVisible, Converter={StaticResource BoolToVisibilityConverter}}">
+                                  VerticalScrollBarVisibility="Disabled">
+                        <ScrollViewer.Style>
+                            <Style TargetType="ScrollViewer">
+                                <Setter Property="Visibility" Value="Visible"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding PopupSurface}" Value="{x:Static models:PopupSurface.Settings}">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding IsDockerSurfaceVisible}" Value="False">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ScrollViewer.Style>
                         <StackPanel Orientation="Horizontal" Margin="0,2,0,2" VerticalAlignment="Center">
                             <Button x:Name="LocalPaneTabButton"
                                     Style="{StaticResource GlassPaneTabLocal}"
@@ -133,6 +251,17 @@
                           MinHeight="120"
                           Margin="{StaticResource Glass.Align.ListGutter}"
                           VerticalAlignment="Stretch">
+                        <Grid.Style>
+                            <Style TargetType="Grid">
+                                <Setter Property="Visibility" Value="Visible"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding PopupSurface}" Value="{x:Static models:PopupSurface.Settings}">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Grid.Style>
+
                         <ListBox x:Name="LocalPortsList"
                                  Panel.ZIndex="1"
                                  Background="Transparent"
@@ -203,8 +332,7 @@
                             </ListBox.ItemTemplate>
                         </ListBox>
 
-                        <TextBlock x:Name="LocalEmptyStateText"
-                                   Text="No local ports listening"
+                        <TextBlock Text="No local ports listening"
                                    HorizontalAlignment="Center"
                                    VerticalAlignment="Center"
                                    Foreground="{StaticResource Text.Secondary}"
@@ -226,8 +354,8 @@
                                 </Style>
                             </TextBlock.Style>
                         </TextBlock>
-                        <TextBlock x:Name="DockerEmptyStateText"
-                                   Text="No published Docker TCP ports"
+
+                        <TextBlock Text="No published Docker TCP ports"
                                    HorizontalAlignment="Center"
                                    VerticalAlignment="Center"
                                    Foreground="{StaticResource Text.Secondary}"
@@ -251,12 +379,214 @@
                         </TextBlock>
                     </Grid>
 
+                    <ScrollViewer Grid.Row="2"
+                                  Margin="12,0,12,8"
+                                  VerticalScrollBarVisibility="Auto"
+                                  HorizontalScrollBarVisibility="Disabled">
+                        <ScrollViewer.Style>
+                            <Style TargetType="ScrollViewer">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding PopupSurface}" Value="{x:Static models:PopupSurface.Settings}">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ScrollViewer.Style>
+                        <ScrollViewer.Resources>
+                            <Style TargetType="ScrollBar" BasedOn="{StaticResource GlassScrollBar}"/>
+                        </ScrollViewer.Resources>
+                        <StackPanel Margin="0,0,0,10">
+                            <Border Style="{StaticResource GlassSectionCardBorder}">
+                                <StackPanel>
+                                    <Grid Margin="8,4,8,4"
+                                          MinHeight="{StaticResource Glass.Metrics.ChromeRowHeight}">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Border Width="22"
+                                                Height="22"
+                                                CornerRadius="7"
+                                                Background="{StaticResource Settings.BlueIconFill}"
+                                                BorderBrush="#52FFFFFF"
+                                                BorderThickness="1"
+                                                VerticalAlignment="Center">
+                                            <TextBlock Text="&#xE8B7;"
+                                                       FontFamily="Segoe Fluent Icons"
+                                                       Foreground="White"
+                                                       FontSize="12"
+                                                       HorizontalAlignment="Center"
+                                                       VerticalAlignment="Center"/>
+                                        </Border>
+                                        <TextBlock Grid.Column="1"
+                                                   Text="Filter Ports"
+                                                   Style="{StaticResource GlassTextPrimaryShadow}"
+                                                   FontSize="12"
+                                                   Margin="8,0,10,0"
+                                                   VerticalAlignment="Center"/>
+                                        <Border Grid.Column="2"
+                                                Background="{StaticResource Search.Fill}"
+                                                CornerRadius="{StaticResource Glass.Metrics.ChromeCapsuleRadius}"
+                                                BorderBrush="{StaticResource Search.Stroke}"
+                                                BorderThickness="1"
+                                                Height="{StaticResource Glass.Metrics.ChromeRowHeight}"
+                                                Margin="0,0,8,0"
+                                                VerticalAlignment="Center">
+                                            <TextBox x:Name="ExcludedPortTextBox"
+                                                     Margin="10,0"
+                                                     Style="{StaticResource SettingsInlineTextBoxStyle}"
+                                                     Text="{Binding ExcludedPortInput, UpdateSourceTrigger=PropertyChanged}"
+                                                     KeyDown="ExcludedPortInput_KeyDown"/>
+                                        </Border>
+                                        <Button Grid.Column="3"
+                                                Command="{Binding AddExcludedPortCommand}"
+                                                Style="{StaticResource GlassCapsuleActionButtonRounded}"
+                                                VerticalAlignment="Center">
+                                            <TextBlock Text="Add"
+                                                       Style="{StaticResource GlassTextPrimaryShadow}"
+                                                       FontWeight="SemiBold"/>
+                                        </Button>
+                                    </Grid>
+
+                                    <Border Style="{StaticResource GlassSectionDivider}"/>
+
+                                    <ListBox ItemsSource="{Binding UserExcludedPorts}"
+                                             Background="Transparent"
+                                             BorderThickness="0"
+                                             ItemContainerStyle="{StaticResource GlassEmbeddedPortListItem}"
+                                             ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                                             ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                             ScrollViewer.CanContentScroll="False"
+                                             Padding="0">
+                                        <ListBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <Grid Style="{StaticResource GlassCompactRowGrid}">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="{StaticResource Glass.Align.IconColumn}"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="{StaticResource Glass.Align.ShortcutColumn}"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <Border Grid.Column="0"
+                                                            Width="22"
+                                                            Height="22"
+                                                            CornerRadius="7"
+                                                            Background="{StaticResource Settings.BlueIconFill}"
+                                                            BorderBrush="#52FFFFFF"
+                                                            BorderThickness="1"
+                                                            HorizontalAlignment="Center"
+                                                            VerticalAlignment="Center">
+                                                        <TextBlock Text="&#xE8B7;"
+                                                                   FontFamily="Segoe Fluent Icons"
+                                                                   Foreground="White"
+                                                                   FontSize="11"
+                                                                   HorizontalAlignment="Center"
+                                                                   VerticalAlignment="Center"/>
+                                                    </Border>
+                                                    <TextBlock Grid.Column="1"
+                                                               Text="{Binding StringFormat=:{}{0}}"
+                                                               Style="{StaticResource GlassTextPrimaryShadow}"
+                                                               FontWeight="SemiBold"
+                                                               FontSize="12"
+                                                               Margin="8,0,0,0"
+                                                               VerticalAlignment="Center"/>
+                                                    <Button Grid.Column="2"
+                                                            HorizontalAlignment="Right"
+                                                            VerticalAlignment="Center"
+                                                            Command="{Binding DataContext.RemoveExcludedPortCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                            CommandParameter="{Binding}"
+                                                            Style="{StaticResource GlassRowKillIconButtonExtracted}"/>
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ListBox.ItemTemplate>
+                                    </ListBox>
+                                </StackPanel>
+                            </Border>
+
+                            <TextBlock Text="{Binding ExcludedPortValidationMessage}"
+                                       Margin="10,0,0,18"
+                                       Foreground="{StaticResource Danger}"
+                                       Effect="{StaticResource Text.Shadow}"
+                                       TextWrapping="Wrap"
+                                       Visibility="{Binding HasExcludedPortValidationMessage, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+                            <Border Style="{StaticResource GlassSectionCardBorder}">
+                                <StackPanel>
+                                    <Grid Margin="8,4,8,4"
+                                          MinHeight="{StaticResource Glass.Metrics.RowMinHeight}">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Border Width="22"
+                                                Height="22"
+                                                CornerRadius="7"
+                                                Background="{StaticResource Settings.GreenIconFill}"
+                                                BorderBrush="#52FFFFFF"
+                                                BorderThickness="1"
+                                                VerticalAlignment="Center">
+                                            <TextBlock Text="&#xE823;"
+                                                       FontFamily="Segoe Fluent Icons"
+                                                       Foreground="White"
+                                                       FontSize="12"
+                                                       HorizontalAlignment="Center"
+                                                       VerticalAlignment="Center"/>
+                                        </Border>
+                                        <TextBlock Grid.Column="1"
+                                                   Text="Scan Interval"
+                                                   Style="{StaticResource GlassTextPrimaryShadow}"
+                                                   FontSize="12"
+                                                   Margin="8,0,0,0"
+                                                   VerticalAlignment="Center"/>
+                                        <Grid Grid.Column="2" VerticalAlignment="Center">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBox x:Name="RefreshIntervalTextBox"
+                                                     Grid.Column="0"
+                                                     Style="{StaticResource SettingsInlineTextBoxStyle}"
+                                                     Text="{Binding RefreshIntervalInput, UpdateSourceTrigger=PropertyChanged}"
+                                                     KeyDown="RefreshIntervalInput_KeyDown"
+                                                     LostFocus="RefreshIntervalInput_LostFocus"/>
+                                            <TextBlock Grid.Column="1"
+                                                       Text="sec"
+                                                       Style="{StaticResource GlassTextTertiaryShadow}"
+                                                       Margin="6,0,0,0"
+                                                       VerticalAlignment="Center"/>
+                                        </Grid>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+
+                            <TextBlock Text="{Binding RefreshIntervalValidationMessage}"
+                                       Margin="10,0,0,10"
+                                       Foreground="{StaticResource Danger}"
+                                       Effect="{StaticResource Text.Shadow}"
+                                       TextWrapping="Wrap"
+                                       Visibility="{Binding HasRefreshIntervalValidationMessage, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+                            <TextBlock Text="{Binding SettingsStatusMessage}"
+                                       Margin="10,0,0,0"
+                                       Foreground="{StaticResource Danger}"
+                                       Effect="{StaticResource Text.Shadow}"
+                                       TextWrapping="Wrap"
+                                       Visibility="{Binding HasSettingsStatusMessage, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                        </StackPanel>
+                    </ScrollViewer>
+
                     <StackPanel Grid.Row="3" Margin="{StaticResource Glass.Align.FooterGutter}">
                         <Button Click="KillAll_Click">
                             <Button.Style>
                                 <Style TargetType="Button" BasedOn="{StaticResource GlassFooterButton}">
                                     <Setter Property="Visibility" Value="Visible"/>
                                     <Style.Triggers>
+                                        <DataTrigger Binding="{Binding PopupSurface}" Value="{x:Static models:PopupSurface.Settings}">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                        </DataTrigger>
                                         <DataTrigger Binding="{Binding ActivePane}" Value="{x:Static models:PortPane.Docker}">
                                             <Setter Property="Visibility" Value="Collapsed"/>
                                         </DataTrigger>
@@ -274,6 +604,9 @@
                                 <Style TargetType="Border" BasedOn="{StaticResource GlassFooterDivider}">
                                     <Setter Property="Margin" Value="0,8,0,0"/>
                                     <Style.Triggers>
+                                        <DataTrigger Binding="{Binding PopupSurface}" Value="{x:Static models:PopupSurface.Settings}">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                        </DataTrigger>
                                         <DataTrigger Binding="{Binding ActivePane}" Value="{x:Static models:PortPane.Docker}">
                                             <Setter Property="Visibility" Value="Collapsed"/>
                                         </DataTrigger>
@@ -291,12 +624,19 @@
                                                              LabelText="Refresh"
                                                              ShortcutText="Ctrl+R"/>
                                 </Button>
+                                <Button x:Name="SettingsButton"
+                                        Command="{Binding OpenSettingsCommand}"
+                                        Style="{StaticResource SettingsFooterButtonStyle}">
+                                    <controls:PopupActionRow IconText="&#xE713;"
+                                                             LabelText="Settings"
+                                                             ShortcutText="{Binding SettingsShortcutText}"/>
+                                </Button>
                                 <Button Click="HideToTray_Click"
                                         Style="{StaticResource GlassFooterButton}"
                                         ToolTip="Hide menu. PortCheck keeps running in the system tray">
                                     <controls:PopupActionRow IconText="&#xE738;"
                                                              LabelText="Hide"
-                                                             ShortcutText="Esc"/>
+                                                             ShortcutText="{Binding HideShortcutText}"/>
                                 </Button>
                             </StackPanel>
                         </Border>

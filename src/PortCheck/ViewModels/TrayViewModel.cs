@@ -15,6 +15,8 @@ public partial class TrayViewModel : ObservableObject
     private readonly ProcessKillerService _killer;
     private readonly DockerPortCatalogService _dockerCatalog;
     private readonly DockerContainerStopService _dockerStop;
+    private readonly SettingsService _settingsService;
+    private readonly PortExclusionService _portExclusionService;
     private readonly Dispatcher _dispatcher;
     private readonly bool _dockerCatalogEnabled;
 
@@ -35,6 +37,9 @@ public partial class TrayViewModel : ObservableObject
     private ObservableCollection<DockerPortInfo> _filteredDockerPorts = new();
 
     [ObservableProperty]
+    private ObservableCollection<int> _userExcludedPorts = new();
+
+    [ObservableProperty]
     private bool _isScanning;
 
     [ObservableProperty]
@@ -52,17 +57,34 @@ public partial class TrayViewModel : ObservableObject
     [ObservableProperty]
     private bool _sortDescending;
 
-    public int RefreshIntervalSeconds { get; }
+    [ObservableProperty]
+    private PopupSurface _popupSurface = PopupSurface.Ports;
 
-    public int LocalPortCount => LocalPorts.Count;
-    public int DockerPortCount => DockerPorts.Count;
-    public int ActivePanePortCount => ActivePane == PortPane.Docker ? DockerPortCount : LocalPortCount;
+    [ObservableProperty]
+    private string _excludedPortInput = string.Empty;
+
+    [ObservableProperty]
+    private string _refreshIntervalInput = string.Empty;
+
+    [ObservableProperty]
+    private string _excludedPortValidationMessage = string.Empty;
+
+    [ObservableProperty]
+    private string _refreshIntervalValidationMessage = string.Empty;
+
+    [ObservableProperty]
+    private string _settingsStatusMessage = string.Empty;
+
+    [ObservableProperty]
+    private int _refreshIntervalSeconds;
 
     public TrayViewModel(
         PortScannerService scanner,
         ProcessKillerService killer,
         DockerPortCatalogService dockerCatalog,
         DockerContainerStopService dockerStop,
+        SettingsService settingsService,
+        PortExclusionService portExclusionService,
         IConfiguration configuration,
         Dispatcher dispatcher)
     {
@@ -70,14 +92,30 @@ public partial class TrayViewModel : ObservableObject
         _killer = killer;
         _dockerCatalog = dockerCatalog;
         _dockerStop = dockerStop;
+        _settingsService = settingsService;
+        _portExclusionService = portExclusionService;
         _dispatcher = dispatcher;
-
-        RefreshIntervalSeconds = configuration.GetValue("appSettings:refreshIntervalSeconds", 5);
-        if (RefreshIntervalSeconds < 1)
-            RefreshIntervalSeconds = 5;
-
         _dockerCatalogEnabled = configuration.GetValue("appSettings:dockerCatalogEnabled", true);
+
+        var settings = _settingsService.Load();
+        _portExclusionService.SetUserExcludedPorts(settings.UserExcludedPorts);
+        RefreshIntervalSeconds = Math.Clamp(settings.RefreshIntervalSeconds ?? configuration.GetValue("appSettings:refreshIntervalSeconds", 5), 3, 20);
+        RefreshIntervalInput = RefreshIntervalSeconds.ToString();
+        UserExcludedPorts = new ObservableCollection<int>(_portExclusionService.UserExcludedPorts);
     }
+
+    public int LocalPortCount => LocalPorts.Count;
+    public int DockerPortCount => DockerPorts.Count;
+    public int ActivePanePortCount => ActivePane == PortPane.Docker ? DockerPortCount : LocalPortCount;
+    public bool IsSettingsSurface => PopupSurface == PopupSurface.Settings;
+    public bool IsPortsSurface => PopupSurface == PopupSurface.Ports;
+    public bool HasExcludedPortValidationMessage => !string.IsNullOrWhiteSpace(ExcludedPortValidationMessage);
+    public bool HasRefreshIntervalValidationMessage => !string.IsNullOrWhiteSpace(RefreshIntervalValidationMessage);
+    public bool HasSettingsStatusMessage => !string.IsNullOrWhiteSpace(SettingsStatusMessage);
+    public bool HasUserExcludedPorts => UserExcludedPorts.Count > 0;
+    public bool CanAddExcludedPort => TryParseExcludedPortInput(ExcludedPortInput, out _, out _);
+    public string HideShortcutText => PopupSurface == PopupSurface.Settings ? string.Empty : "Esc";
+    public string SettingsShortcutText => PopupSurface == PopupSurface.Settings ? "Esc" : string.Empty;
 
     partial void OnSearchQueryChanged(string value) => ApplyFilter();
 
@@ -93,6 +131,54 @@ public partial class TrayViewModel : ObservableObject
             _ = RefreshPortsAsync();
     }
 
+    partial void OnPopupSurfaceChanged(PopupSurface value)
+    {
+        OnPropertyChanged(nameof(IsSettingsSurface));
+        OnPropertyChanged(nameof(IsPortsSurface));
+        OnPropertyChanged(nameof(HideShortcutText));
+        OnPropertyChanged(nameof(SettingsShortcutText));
+        SettingsStatusMessage = string.Empty;
+        if (value == PopupSurface.Ports)
+            ExcludedPortValidationMessage = string.Empty;
+    }
+
+    partial void OnExcludedPortInputChanged(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            ExcludedPortValidationMessage = string.Empty;
+        else if (TryParseExcludedPortInput(value, out _, out var message))
+            ExcludedPortValidationMessage = string.Empty;
+        else
+            ExcludedPortValidationMessage = message;
+
+        AddExcludedPortCommand.NotifyCanExecuteChanged();
+        OnPropertyChanged(nameof(CanAddExcludedPort));
+        OnPropertyChanged(nameof(HasExcludedPortValidationMessage));
+    }
+
+    partial void OnRefreshIntervalInputChanged(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            RefreshIntervalValidationMessage = "Refresh interval must be between 3 and 20 seconds.";
+        else if (TryParseRefreshInterval(value, out _, out var message))
+            RefreshIntervalValidationMessage = string.Empty;
+        else
+            RefreshIntervalValidationMessage = message;
+
+        OnPropertyChanged(nameof(HasRefreshIntervalValidationMessage));
+    }
+
+    partial void OnExcludedPortValidationMessageChanged(string value) => OnPropertyChanged(nameof(HasExcludedPortValidationMessage));
+
+    partial void OnRefreshIntervalValidationMessageChanged(string value) => OnPropertyChanged(nameof(HasRefreshIntervalValidationMessage));
+
+    partial void OnSettingsStatusMessageChanged(string value) => OnPropertyChanged(nameof(HasSettingsStatusMessage));
+
+    partial void OnUserExcludedPortsChanged(ObservableCollection<int> value)
+    {
+        OnPropertyChanged(nameof(HasUserExcludedPorts));
+    }
+
     public async Task InitializeAsync()
     {
         await RefreshPortsAsync();
@@ -100,6 +186,72 @@ public partial class TrayViewModel : ObservableObject
     }
 
     public void StopAutoRefresh() => _refreshCancellation?.Cancel();
+
+    [RelayCommand]
+    public void OpenSettings()
+    {
+        PopupSurface = PopupSurface.Settings;
+    }
+
+    [RelayCommand]
+    public void CloseSettings()
+    {
+        PopupSurface = PopupSurface.Ports;
+    }
+
+    [RelayCommand(CanExecute = nameof(CanAddExcludedPort))]
+    public async Task AddExcludedPortAsync()
+    {
+        if (!TryParseExcludedPortInput(ExcludedPortInput, out var port, out var message))
+        {
+            ExcludedPortValidationMessage = message;
+            return;
+        }
+
+        _portExclusionService.SetUserExcludedPorts(UserExcludedPorts.Append(port));
+        UserExcludedPorts = new ObservableCollection<int>(_portExclusionService.UserExcludedPorts);
+        ExcludedPortInput = string.Empty;
+        SettingsStatusMessage = string.Empty;
+
+        await PersistSettingsAndRefreshAsync();
+    }
+
+    [RelayCommand]
+    public async Task RemoveExcludedPortAsync(int port)
+    {
+        _portExclusionService.SetUserExcludedPorts(UserExcludedPorts.Where(existing => existing != port));
+        UserExcludedPorts = new ObservableCollection<int>(_portExclusionService.UserExcludedPorts);
+        SettingsStatusMessage = string.Empty;
+
+        await PersistSettingsAndRefreshAsync();
+    }
+
+    [RelayCommand]
+    public async Task CommitRefreshIntervalAsync()
+    {
+        if (!TryParseRefreshInterval(RefreshIntervalInput, out var interval, out var message))
+        {
+            RefreshIntervalValidationMessage = message;
+            return;
+        }
+
+        RefreshIntervalSeconds = interval;
+        RefreshIntervalInput = interval.ToString();
+        RefreshIntervalValidationMessage = string.Empty;
+        SettingsStatusMessage = string.Empty;
+
+        try
+        {
+            PersistSettings();
+            RestartAutoRefresh();
+        }
+        catch (Exception ex)
+        {
+            SettingsStatusMessage = $"Could not save settings: {ex.Message}";
+        }
+
+        await Task.CompletedTask;
+    }
 
     [RelayCommand]
     public async Task RefreshPortsAsync()
@@ -125,8 +277,14 @@ public partial class TrayViewModel : ObservableObject
                 catalogRows = await _dockerCatalog.FetchPublishedTcpAsync(listen, ct);
 
             var inferredRows = BuildInferredDockerRows(localPorts);
-            var dockerRows = MergeDockerRows(catalogRows, inferredRows);
+            var dockerRows = MergeDockerRows(catalogRows, inferredRows)
+                .Where(row => !_portExclusionService.IsExcluded(row.HostPort))
+                .ToList();
             var dockerVisible = dockerRows.Count > 0;
+
+            var visibleLocalPorts = localPorts
+                .Where(port => !_portExclusionService.IsExcluded(port.Port))
+                .ToList();
 
             if (ct.IsCancellationRequested)
                 return;
@@ -135,16 +293,16 @@ public partial class TrayViewModel : ObservableObject
                 ? dockerRows.Select(r => r.HostPort).ToHashSet()
                 : new HashSet<int>();
 
-            foreach (var port in localPorts)
+            foreach (var port in visibleLocalPorts)
                 port.IsDockerPublished = dockerHostPorts.Contains(port.Port);
 
-            var switchToLocal = ActivePane == PortPane.Docker && !dockerVisible;
+            var switchToLocalPane = ActivePane == PortPane.Docker && !dockerVisible;
 
             await _dispatcher.InvokeAsync(() =>
             {
                 ReconcileCollection(
                     LocalPorts,
-                    localPorts,
+                    visibleLocalPorts,
                     port => (port.Pid, port.Port, port.Address),
                     PreserveLocalRowState);
                 ReconcileCollection(
@@ -153,11 +311,12 @@ public partial class TrayViewModel : ObservableObject
                     row => (row.ContainerId, row.HostPort, row.ContainerPort, row.HostAddress, row.Protocol),
                     PreserveDockerRowState);
                 IsDockerSurfaceVisible = dockerVisible;
-                if (switchToLocal)
+                if (switchToLocalPane)
                     ActivePane = PortPane.Local;
                 ApplyFilter();
                 OnPropertyChanged(nameof(LocalPortCount));
                 OnPropertyChanged(nameof(DockerPortCount));
+                OnPropertyChanged(nameof(HasUserExcludedPorts));
             });
         }
         catch (Exception ex)
@@ -176,13 +335,15 @@ public partial class TrayViewModel : ObservableObject
     {
         if (pane == PortPane.Docker && !IsDockerSurfaceVisible)
             return;
+
+        PopupSurface = PopupSurface.Ports;
         ActivePane = pane;
     }
 
     [RelayCommand]
     public async Task KillProcessAsync(PortInfo? port)
     {
-        if (port is not { IsActive: true })
+        if (port is not { IsActive: true } || _portExclusionService.IsExcluded(port.Port))
             return;
 
         try
@@ -216,7 +377,7 @@ public partial class TrayViewModel : ObservableObject
     [RelayCommand]
     public async Task KillContainerAsync(DockerPortInfo? row)
     {
-        if (row == null || !row.IsKillSupported)
+        if (row == null || !row.IsKillSupported || _portExclusionService.IsExcluded(row.HostPort))
             return;
 
         try
@@ -238,7 +399,9 @@ public partial class TrayViewModel : ObservableObject
     [RelayCommand]
     public async Task KillAllLocalAsync()
     {
-        var activePorts = LocalPorts.Where(p => p.IsActive).ToList();
+        var activePorts = LocalPorts
+            .Where(p => p.IsActive && !_portExclusionService.IsExcluded(p.Port))
+            .ToList();
         if (activePorts.Count == 0)
             return;
 
@@ -278,6 +441,34 @@ public partial class TrayViewModel : ObservableObject
                 }
             }
         }, token);
+    }
+
+    private void RestartAutoRefresh()
+    {
+        StopAutoRefresh();
+        StartAutoRefresh();
+    }
+
+    private void PersistSettings()
+    {
+        _settingsService.Save(new UserSettings
+        {
+            RefreshIntervalSeconds = RefreshIntervalSeconds,
+            UserExcludedPorts = UserExcludedPorts.ToArray()
+        });
+    }
+
+    private async Task PersistSettingsAndRefreshAsync()
+    {
+        try
+        {
+            PersistSettings();
+            await RefreshPortsAsync();
+        }
+        catch (Exception ex)
+        {
+            SettingsStatusMessage = $"Could not save settings: {ex.Message}";
+        }
     }
 
     private void ApplyFilter()
@@ -393,6 +584,54 @@ public partial class TrayViewModel : ObservableObject
                 ? source.OrderByDescending(p => p.HostPort).ThenBy(p => p.HostAddress, StringComparer.OrdinalIgnoreCase)
                 : source.OrderBy(p => p.HostPort).ThenBy(p => p.HostAddress, StringComparer.OrdinalIgnoreCase)
         };
+
+    private bool TryParseExcludedPortInput(string value, out int port, out string message)
+    {
+        if (!int.TryParse(value.Trim(), out port))
+        {
+            message = "Port must be a whole number between 1 and 65535.";
+            return false;
+        }
+
+        if (port is < 1 or > 65535)
+        {
+            message = "Port must be between 1 and 65535.";
+            return false;
+        }
+
+        if (_portExclusionService.ProtectedPorts.Contains(port))
+        {
+            message = "This port is already protected by Windows defaults.";
+            return false;
+        }
+
+        if (UserExcludedPorts.Contains(port))
+        {
+            message = "This port is already excluded.";
+            return false;
+        }
+
+        message = string.Empty;
+        return true;
+    }
+
+    private bool TryParseRefreshInterval(string value, out int interval, out string message)
+    {
+        if (!int.TryParse(value.Trim(), out interval))
+        {
+            message = "Refresh interval must be a whole number between 3 and 20 seconds.";
+            return false;
+        }
+
+        if (interval is < 3 or > 20)
+        {
+            message = "Refresh interval must be between 3 and 20 seconds.";
+            return false;
+        }
+
+        message = string.Empty;
+        return true;
+    }
 
     private static void ReconcileCollection<TItem, TKey>(
         ObservableCollection<TItem> target,

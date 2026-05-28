@@ -42,9 +42,9 @@ public partial class TrayPopupWindow : Window
             _lastAnimatedPane = _viewModel.ActivePane;
             UpdateSearchPlaceholder();
             ApplyRoundedClips();
+            ApplyCaptureSurfaceOverride();
             await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
-            if (IsCaptureSession)
-                await CaptureScreenshotAndShutdownAsync();
+            FocusPrimaryControl();
         };
 
         SizeChanged += (_, _) => ApplyRoundedClips();
@@ -58,6 +58,11 @@ public partial class TrayPopupWindow : Window
                     AnimatePaneChange(_viewModel.ActivePane);
                     UpdateSearchPlaceholder();
                 });
+            }
+
+            if (e.PropertyName == nameof(TrayViewModel.PopupSurface))
+            {
+                Dispatcher.Invoke(FocusPrimaryControl);
             }
 
             if (e.PropertyName == nameof(TrayViewModel.IsScanning))
@@ -126,13 +131,13 @@ public partial class TrayPopupWindow : Window
         LocalPortsList.RenderTransform = null;
         DockerPortsList.RenderTransform = null;
 
-        ListHostGrid.InvalidateMeasure();
+        ListHostGrid?.InvalidateMeasure();
     }
 
     private void UpdateSearchPlaceholder() =>
         SearchPlaceholder.Text = _viewModel.ActivePane == PortPane.Docker
-            ? "Search Docker ports…"
-            : "Search local ports…";
+            ? "Search Docker ports"
+            : "Search local ports";
 
     private void ApplyRoundedClips()
     {
@@ -157,7 +162,7 @@ public partial class TrayPopupWindow : Window
     {
         InputBindings.Add(new KeyBinding(_viewModel.RefreshPortsCommand, Key.R, ModifierKeys.Control));
         InputBindings.Add(new KeyBinding(new RelayCommandWrapper(() => KillAllWithConfirm()), Key.K, ModifierKeys.Control));
-        InputBindings.Add(new KeyBinding(new RelayCommandWrapper(HideToTray), Key.Escape, ModifierKeys.None));
+        InputBindings.Add(new KeyBinding(new RelayCommandWrapper(HandleEscapeAsync), Key.Escape, ModifierKeys.None));
     }
 
     public void ShowNearTray()
@@ -188,7 +193,28 @@ public partial class TrayPopupWindow : Window
         }
 
         Activate();
-        SearchBox.Focus();
+        FocusPrimaryControl();
+    }
+
+    public void ShowForCapture()
+    {
+        Width = 340;
+        Height = 520;
+        MaxHeight = 520;
+        WindowStartupLocation = WindowStartupLocation.CenterScreen;
+        Show();
+        Activate();
+        UpdateLayout();
+        UpdateBackdropBlur();
+        FocusPrimaryControl();
+    }
+
+    private void FocusPrimaryControl()
+    {
+        if (_viewModel.PopupSurface == PopupSurface.Settings)
+            ExcludedPortTextBox.Focus();
+        else
+            SearchBox.Focus();
     }
 
     private void UpdateBackdropBlur()
@@ -222,9 +248,9 @@ public partial class TrayPopupWindow : Window
 
     private static T? FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
     {
-        for (var i = 0; i < System.Windows.Media.VisualTreeHelper.GetChildrenCount(parent); i++)
+        for (var i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
         {
-            var child = System.Windows.Media.VisualTreeHelper.GetChild(parent, i);
+            var child = VisualTreeHelper.GetChild(parent, i);
             if (child is T match)
                 return match;
 
@@ -240,12 +266,33 @@ public partial class TrayPopupWindow : Window
     {
         if (_isProcessingAction || IsCaptureSession)
             return;
+
         HideToTray();
     }
 
     private static bool IsCaptureSession =>
         Environment.GetCommandLineArgs().Any(arg =>
-            string.Equals(arg, "--show-popup", StringComparison.OrdinalIgnoreCase));
+            arg.StartsWith("--capture-to=", StringComparison.OrdinalIgnoreCase));
+
+    private void ApplyCaptureSurfaceOverride()
+    {
+        foreach (var arg in Environment.GetCommandLineArgs())
+        {
+            const string prefix = "--capture-surface=";
+            if (!arg.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            var surface = arg[prefix.Length..];
+            if (surface.Equals("settings", StringComparison.OrdinalIgnoreCase))
+                _viewModel.OpenSettings();
+        }
+    }
+
+    public async Task CaptureForValidationAsync()
+    {
+        ApplyCaptureSurfaceOverride();
+        await CaptureScreenshotAndShutdownAsync();
+    }
 
     private async Task CaptureScreenshotAndShutdownAsync()
     {
@@ -341,7 +388,7 @@ public partial class TrayPopupWindow : Window
         panel.Children.Add(CreatePopupMenuButton("PID", _viewModel.SortField == PortListSortField.Pid,
             () => _viewModel.SortField = PortListSortField.Pid, new CornerRadius(4, 4, 4, 4)));
         panel.Children.Add(CreatePopupMenuDivider());
-        panel.Children.Add(CreatePopupMenuButton("Ascending", _viewModel.SortDescending == false,
+        panel.Children.Add(CreatePopupMenuButton("Ascending", !_viewModel.SortDescending,
             () => _viewModel.SortDescending = false, new CornerRadius(4, 4, 4, 4)));
         panel.Children.Add(CreatePopupMenuButton("Descending", _viewModel.SortDescending,
             () => _viewModel.SortDescending = true, new CornerRadius(4, 4, 8, 8)));
@@ -369,6 +416,39 @@ public partial class TrayPopupWindow : Window
         };
 
         _sortMenuPopup.IsOpen = true;
+    }
+
+    private async Task HandleEscapeAsync()
+    {
+        if (_viewModel.PopupSurface == PopupSurface.Settings)
+            _viewModel.CloseSettings();
+        else
+            HideToTray();
+
+        await Task.CompletedTask;
+    }
+
+    private async void ExcludedPortInput_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key != Key.Enter)
+            return;
+
+        e.Handled = true;
+        await _viewModel.AddExcludedPortCommand.ExecuteAsync(null);
+    }
+
+    private async void RefreshIntervalInput_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key != Key.Enter)
+            return;
+
+        e.Handled = true;
+        await _viewModel.CommitRefreshIntervalCommand.ExecuteAsync(null);
+    }
+
+    private async void RefreshIntervalInput_LostFocus(object sender, RoutedEventArgs e)
+    {
+        await _viewModel.CommitRefreshIntervalCommand.ExecuteAsync(null);
     }
 
     private Button CreatePopupMenuButton(string label, bool isSelected, Action onSelect, CornerRadius cornerRadius)
