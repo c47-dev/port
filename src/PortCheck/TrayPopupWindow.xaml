@@ -143,19 +143,17 @@
                                 </TextBlock>
                             </Grid>
                         </Border>
-                        <Button x:Name="SortFilterButton"
-                                Grid.Column="1"
-                                Style="{StaticResource GlassRoundButton}"
-                                ToolTip="Sort and filter"
-                                Click="SortFilterButton_Click">
+                        <controls:GlassRoundButton x:Name="SortFilterButton"
+                                                   Grid.Column="1"
+                                                   ToolTip="Sort and filter"
+                                                   Click="SortFilterButton_Click">
                             <TextBlock Text="&#xE8CB;"
                                        FontFamily="Segoe Fluent Icons"
                                        FontSize="12"
                                        Foreground="{StaticResource Text.Primary}"
-                                       Effect="{StaticResource Text.Shadow}"
                                        HorizontalAlignment="Center"
                                        VerticalAlignment="Center"/>
-                        </Button>
+                        </controls:GlassRoundButton>
                     </Grid>
 
                     <Grid Grid.Row="0"
@@ -176,20 +174,16 @@
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
-                        <Button x:Name="BackButton"
-                                Width="{StaticResource Glass.Metrics.ChromeRowHeight}"
-                                Height="{StaticResource Glass.Metrics.ChromeRowHeight}"
-                                Margin="0,0,8,0"
-                                Command="{Binding CloseSettingsCommand}"
-                                Style="{StaticResource GlassRoundButton}">
+                        <controls:GlassRoundButton x:Name="BackButton"
+                                                   Margin="0,0,8,0"
+                                                   Command="{Binding CloseSettingsCommand}">
                             <TextBlock Text="&#xE72B;"
                                        FontFamily="Segoe Fluent Icons"
                                        FontSize="12"
                                        Foreground="{StaticResource Text.Primary}"
-                                       Effect="{StaticResource Text.Shadow}"
                                        HorizontalAlignment="Center"
                                        VerticalAlignment="Center"/>
-                        </Button>
+                        </controls:GlassRoundButton>
                         <StackPanel Grid.Column="1"
                                     VerticalAlignment="Center"
                                     HorizontalAlignment="Center">

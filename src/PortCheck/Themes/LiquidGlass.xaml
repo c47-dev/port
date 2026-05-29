@@ -152,41 +152,7 @@
         </Style.Triggers>
     </Style>
 
-    <!-- 32×32 circular chrome icon control (sort, back, toolbar glyphs). -->
-    <Style x:Key="GlassRoundButton" TargetType="Button">
-        <Setter Property="Width" Value="{StaticResource Glass.Metrics.ChromeRowHeight}"/>
-        <Setter Property="Height" Value="{StaticResource Glass.Metrics.ChromeRowHeight}"/>
-        <Setter Property="Padding" Value="0"/>
-        <Setter Property="Background" Value="{StaticResource PaneTab.Idle.Fill}"/>
-        <Setter Property="BorderBrush" Value="#45FFFFFF"/>
-        <Setter Property="BorderThickness" Value="1"/>
-        <Setter Property="Cursor" Value="Hand"/>
-        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="Button">
-                    <Border x:Name="Bd"
-                            Background="{TemplateBinding Background}"
-                            BorderBrush="{TemplateBinding BorderBrush}"
-                            BorderThickness="{TemplateBinding BorderThickness}"
-                            CornerRadius="999"
-                            SnapsToDevicePixels="True"
-                            UseLayoutRounding="True">
-                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                    </Border>
-                    <ControlTemplate.Triggers>
-                        <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Bd" Property="Background" Value="#40FFFFFF"/>
-                        </Trigger>
-                        <Trigger Property="IsPressed" Value="True">
-                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource PaneTab.Active.Fill}"/>
-                            <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource PaneTab.Active.Stroke}"/>
-                        </Trigger>
-                    </ControlTemplate.Triggers>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-    </Style>
+    <!-- 32×32 circular chrome: Controls.GlassRoundButton + Themes/GlassRoundButton.xaml -->
 
     <!-- Popup chrome: use Controls.GlassPopupShell (tint + sheen + rim + captured blur). -->
     <Style x:Key="GlassPopupMenuShell" TargetType="Border">

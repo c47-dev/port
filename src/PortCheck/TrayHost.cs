@@ -61,7 +61,7 @@ public sealed class TrayHost : IDisposable
             () => _viewModel.RefreshPortsCommand.ExecuteAsync(null)));
 
         panel.Children.Add(CreateTrayMenuButton("Kill All", ShowKillAllFromTrayAsync,
-            foreground: FindBrush("Danger")));
+            foreground: FindBrush("Glass.Action.Danger.Foreground")));
 
         panel.Children.Add(new Border
         {
