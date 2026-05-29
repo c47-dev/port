@@ -1,6 +1,6 @@
 # Liquid Glass UI Dedup — Phase 1, 2, 4
 
-**Status:** Phase 1, 2, 4 complete (Phase 3 deferred)  
+**Status:** Complete (Phases 1–4)  
 **Governing UI spec:** `docs/spec/liquid-glass-uiux.md`  
 **Product spec:** `docs/spec/portcheck.md` (unchanged behavior)
 
@@ -10,7 +10,7 @@
 | --- | --- | --- |
 | **1** | Remove dead global tokens | Yes |
 | **2** | Consolidate port list `ListBoxItem` styles | Yes |
-| **3** | Remove legacy row kill/dismiss styles | **Deferred** (heavier; validate 1/2/4 first) |
+| **3** | Remove legacy row kill/dismiss styles | Yes |
 | **4** | Single glass material stack via `GlassPopupShell` | Yes |
 
 ---
@@ -117,10 +117,14 @@
 2. Delete legacy styles; grep validation.
 3. Capture rows in kill-confirm state.
 
-### Test validation (when executed)
+### Test validation
 
-- Local/Docker row kill + dismiss buttons render and hover.
-- Excluded port remove button unchanged.
+| Check | Method | Pass |
+| --- | --- | --- |
+| Build | `dotnet build` Debug + Release | 0 errors |
+| Kill confirm UI | `--capture-surface=kill-confirm` | Glass `Kill` pill + ghost `X` |
+| Settings remove | `--capture-surface=settings` | Red circular `GlassRowKillIconButton` on excluded rows |
+| Main popup | `--capture-to=artifacts/popup-capture.png` | No regression |
 
 ---
 
@@ -173,7 +177,7 @@
 - [x] `artifacts/popup-capture.png` regenerated; visual parity confirmed
 - [x] `artifacts/popup-capture-settings.png` — settings + section cards OK
 - [x] `liquid-glass-uiux.md` reflects module changes
-- [ ] Point 3 explicitly still open in this document
+- [x] Point 3 complete — legacy solid-danger row styles removed; canonical `GlassRowKill*` / `GlassRowDismissButton`
 
 ## Validation evidence (2026-05-29)
 
@@ -190,3 +194,13 @@ Build: `dotnet build -c Debug` and `-c Release` — 0 errors.
 | --- | --- |
 | 2026-05-29 | Plan authored; execution started for points 1, 2, 4 |
 | 2026-05-29 | Points 1, 2, 4 delivered; UI capture validation passed |
+| 2026-05-29 | Point 3 delivered; renamed `*Extracted` → canonical row action styles; kill-confirm capture |
+| 2026-05-29 | Module hygiene batch: `GlassRoundButton`, `GlassDivider`, capsule/settings/danger dedup; all captures re-run |
+
+## Point 3 validation evidence (2026-05-29)
+
+| Capture | Command | Result |
+| --- | --- | --- |
+| Main popup | `--capture-to=artifacts/popup-capture.png` | Shell + list OK |
+| Settings | `--capture-surface=settings` | Ghost dismiss on excluded rows OK |
+| Kill confirm | `--capture-surface=kill-confirm --capture-to=artifacts/popup-capture-kill-confirm.png` | Glass danger Kill + ghost X OK |

@@ -60,7 +60,7 @@
                     ToolTip="Stop container"
                     Click="BeginKill_Click">
                 <Button.Style>
-                    <Style TargetType="Button" BasedOn="{StaticResource GlassRowKillIconButtonExtracted}">
+                    <Style TargetType="Button" BasedOn="{StaticResource GlassRowKillIconButton}">
                         <Setter Property="Visibility" Value="Collapsed"/>
                         <Style.Triggers>
                             <MultiDataTrigger>
@@ -102,10 +102,10 @@
                         VerticalAlignment="Center"
                         Margin="0,0,4,0">
                 <Button Content="Kill"
-                        Style="{StaticResource GlassRowKillButtonExtracted}"
+                        Style="{StaticResource GlassRowKillButton}"
                         Click="ConfirmKill_Click"/>
                 <Button Content="X"
-                        Style="{StaticResource GlassRowDismissButtonExtracted}"
+                        Style="{StaticResource GlassRowDismissButton}"
                         Click="CancelKill_Click"/>
             </StackPanel>
         </Grid>

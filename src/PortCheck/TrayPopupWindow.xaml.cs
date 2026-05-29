@@ -270,7 +270,16 @@ public partial class TrayPopupWindow : Window
             var surface = arg[prefix.Length..];
             if (surface.Equals("settings", StringComparison.OrdinalIgnoreCase))
                 _viewModel.OpenSettings();
+            else if (surface.Equals("kill-confirm", StringComparison.OrdinalIgnoreCase))
+                ApplyKillConfirmCaptureOverride();
         }
+    }
+
+    private void ApplyKillConfirmCaptureOverride()
+    {
+        var row = _viewModel.FilteredLocalPorts.FirstOrDefault();
+        if (row != null)
+            row.IsConfirmingKill = true;
     }
 
     public async Task CaptureForValidationAsync()

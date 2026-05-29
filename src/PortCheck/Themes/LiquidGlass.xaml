@@ -5,16 +5,13 @@
 
     <!-- Visual glass stack (works on top of captured blur OR fallback) -->
     <SolidColorBrush x:Key="Glass.Tint" Color="#18FFFFFF"/>
-    <SolidColorBrush x:Key="Glass.TintEdge" Color="#0AFFFFFF"/>
-    <SolidColorBrush x:Key="Glass.Overlay" Color="#42000000"/>
     <SolidColorBrush x:Key="Glass.Stroke" Color="#45FFFFFF"/>
-    <SolidColorBrush x:Key="Glass.StrokeBright" Color="#55FFFFFF"/>
     <SolidColorBrush x:Key="Text.Primary" Color="#FFFFFF"/>
     <SolidColorBrush x:Key="Text.Secondary" Color="#EBFFFFFF"/>
     <SolidColorBrush x:Key="Text.Tertiary" Color="#99FFFFFF"/>
     <SolidColorBrush x:Key="Accent.Blue" Color="#5B9DD9"/>
     <SolidColorBrush x:Key="Status.Active" Color="#34C759"/>
-    <SolidColorBrush x:Key="Danger" Color="#FF453A"/>
+    <SolidColorBrush x:Key="Glass.Action.Danger.Foreground" Color="#FFFF8A84"/>
     <SolidColorBrush x:Key="Hover.Surface" Color="#24FFFFFF"/>
     <SolidColorBrush x:Key="Search.Fill" Color="#1FFFFFFF"/>
     <SolidColorBrush x:Key="Search.Stroke" Color="#55FFFFFF"/>
@@ -87,7 +84,7 @@
     <CornerRadius x:Key="Glass.Metrics.KillCornerRadius">10</CornerRadius>
     <system:Double x:Key="Glass.Metrics.KillLabelHeight" xmlns:system="clr-namespace:System;assembly=mscorlib">22</system:Double>
     <CornerRadius x:Key="Glass.Metrics.KillLabelCornerRadius">11</CornerRadius>
-    <Geometry x:Key="Glass.Icon.CrossGeometry">M 4.5,4.5 L 11.5,11.5 M 11.5,4.5 L 4.5,11.5</Geometry>
+    <Geometry x:Key="Glass.Icon.DismissPath">M0,0 L8,8 M8,0 L0,8</Geometry>
 
     <!-- Soft rim: weaker top-left highlight (top was too harsh vs bottom) -->
     <LinearGradientBrush x:Key="Glass.RimLight" StartPoint="0.5,0" EndPoint="0.5,1">
@@ -155,7 +152,8 @@
         </Style.Triggers>
     </Style>
 
-    <Style x:Key="GlassSortFilterButton" TargetType="Button">
+    <!-- 32×32 circular chrome icon control (sort, back, toolbar glyphs). -->
+    <Style x:Key="GlassRoundButton" TargetType="Button">
         <Setter Property="Width" Value="{StaticResource Glass.Metrics.ChromeRowHeight}"/>
         <Setter Property="Height" Value="{StaticResource Glass.Metrics.ChromeRowHeight}"/>
         <Setter Property="Padding" Value="0"/>
@@ -189,8 +187,6 @@
             </Setter.Value>
         </Setter>
     </Style>
-
-    <Style x:Key="GlassChromeIconButton" TargetType="Button" BasedOn="{StaticResource GlassSortFilterButton}"/>
 
     <!-- Popup chrome: use Controls.GlassPopupShell (tint + sheen + rim + captured blur). -->
     <Style x:Key="GlassPopupMenuShell" TargetType="Border">
@@ -242,77 +238,23 @@
         </Setter>
     </Style>
 
-    <Style x:Key="GlassPopupMenuDivider" TargetType="Border">
+    <Style x:Key="GlassDivider" TargetType="Border">
         <Setter Property="Height" Value="1"/>
         <Setter Property="Margin" Value="8,4,8,4"/>
         <Setter Property="Opacity" Value="0.45"/>
         <Setter Property="Background" Value="{StaticResource Glass.Stroke}"/>
     </Style>
 
-    <Style x:Key="GlassFooterDivider" TargetType="Border" BasedOn="{StaticResource GlassPopupMenuDivider}">
-        <Setter Property="Margin" Value="0,8,0,0"/>
-    </Style>
-
-    <Style x:Key="GlassPillButton" TargetType="Button">
-        <Setter Property="MinWidth" Value="64"/>
-        <Setter Property="Height" Value="28"/>
+    <Style x:Key="GlassCapsuleActionButton" TargetType="Button">
+        <Setter Property="MinWidth" Value="68"/>
+        <Setter Property="Height" Value="{StaticResource Glass.Metrics.ChromeRowHeight}"/>
         <Setter Property="Padding" Value="16,0"/>
         <Setter Property="FontSize" Value="12"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
         <Setter Property="Foreground" Value="{StaticResource Text.Primary}"/>
-        <Setter Property="Background" Value="#40FFFFFF"/>
+        <Setter Property="Background" Value="{StaticResource PaneTab.Idle.Fill}"/>
         <Setter Property="BorderThickness" Value="0"/>
         <Setter Property="Cursor" Value="Hand"/>
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="Button">
-                    <Border x:Name="Bd" Background="{TemplateBinding Background}"
-                            CornerRadius="14" Padding="{TemplateBinding Padding}"
-                            BorderBrush="#60FFFFFF" BorderThickness="1">
-                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                    </Border>
-                    <ControlTemplate.Triggers>
-                        <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Bd" Property="Background" Value="#58FFFFFF"/>
-                        </Trigger>
-                    </ControlTemplate.Triggers>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-    </Style>
-
-    <Style x:Key="GlassCapsuleActionButton" TargetType="Button" BasedOn="{StaticResource GlassPillButton}">
-        <Setter Property="MinWidth" Value="68"/>
-        <Setter Property="Height" Value="{StaticResource Glass.Metrics.ChromeRowHeight}"/>
-        <Setter Property="Padding" Value="16,0"/>
-        <Setter Property="Background" Value="{StaticResource PaneTab.Idle.Fill}"/>
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="Button">
-                    <Border x:Name="Bd"
-                            Background="{TemplateBinding Background}"
-                            CornerRadius="999"
-                            Padding="{TemplateBinding Padding}"
-                            BorderBrush="#55FFFFFF"
-                            BorderThickness="1"
-                            SnapsToDevicePixels="True">
-                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                    </Border>
-                    <ControlTemplate.Triggers>
-                        <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Bd" Property="Background" Value="#58FFFFFF"/>
-                            <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource PaneTab.Active.Stroke}"/>
-                        </Trigger>
-                        <Trigger Property="IsPressed" Value="True">
-                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource PaneTab.Active.Fill}"/>
-                        </Trigger>
-                    </ControlTemplate.Triggers>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-    </Style>
-
-    <Style x:Key="GlassCapsuleActionButtonRounded" TargetType="Button" BasedOn="{StaticResource GlassCapsuleActionButton}">
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
@@ -353,52 +295,6 @@
         <Setter Property="Height" Value="1"/>
         <Setter Property="Background" Value="#18FFFFFF"/>
         <Setter Property="Margin" Value="8,0,8,0"/>
-    </Style>
-
-    <Style x:Key="GlassCapsuleDangerButton" TargetType="Button" BasedOn="{StaticResource GlassCapsuleActionButton}">
-        <Setter Property="MinWidth" Value="{StaticResource Glass.Metrics.ChromeRowHeight}"/>
-        <Setter Property="Width" Value="{StaticResource Glass.Metrics.ChromeRowHeight}"/>
-        <Setter Property="Padding" Value="0"/>
-        <Setter Property="Background" Value="{StaticResource Glass.Action.Danger.Fill}"/>
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="Button">
-                    <Border x:Name="Bd"
-                            Background="{TemplateBinding Background}"
-                            BorderBrush="{StaticResource Glass.Action.Danger.Stroke}"
-                            BorderThickness="1"
-                            CornerRadius="999"
-                            SnapsToDevicePixels="True">
-                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                    </Border>
-                    <ControlTemplate.Triggers>
-                        <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource Glass.Action.Danger.HoverFill}"/>
-                        </Trigger>
-                    </ControlTemplate.Triggers>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-    </Style>
-
-    <Style x:Key="GlassPillButtonDanger" TargetType="Button" BasedOn="{StaticResource GlassPillButton}">
-        <Setter Property="Background" Value="{StaticResource Danger}"/>
-        <Setter Property="Foreground" Value="White"/>
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="Button">
-                    <Border x:Name="Bd" Background="{TemplateBinding Background}"
-                            CornerRadius="14" Padding="{TemplateBinding Padding}">
-                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                    </Border>
-                    <ControlTemplate.Triggers>
-                        <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Bd" Property="Opacity" Value="0.88"/>
-                        </Trigger>
-                    </ControlTemplate.Triggers>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
     </Style>
 
     <Style x:Key="GlassFooterIcon" TargetType="TextBlock">
@@ -507,68 +403,15 @@
     </Style>
 
     <Style x:Key="GlassRowKillButton" TargetType="Button">
-        <Setter Property="Height" Value="22"/>
-        <Setter Property="MinWidth" Value="40"/>
-        <Setter Property="Padding" Value="10,0"/>
-        <Setter Property="FontSize" Value="11"/>
-        <Setter Property="FontWeight" Value="SemiBold"/>
-        <Setter Property="Foreground" Value="White"/>
-        <Setter Property="Background" Value="{StaticResource Danger}"/>
-        <Setter Property="BorderThickness" Value="0"/>
-        <Setter Property="Cursor" Value="Hand"/>
-        <Setter Property="VerticalAlignment" Value="Center"/>
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="Button">
-                    <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="11"
-                            Padding="{TemplateBinding Padding}">
-                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                    </Border>
-                    <ControlTemplate.Triggers>
-                        <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Bd" Property="Opacity" Value="0.88"/>
-                        </Trigger>
-                    </ControlTemplate.Triggers>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-    </Style>
-
-    <Style x:Key="GlassRowDismissButton" TargetType="Button">
-        <Setter Property="Width" Value="22"/>
-        <Setter Property="Height" Value="22"/>
-        <Setter Property="FontSize" Value="10"/>
-        <Setter Property="FontWeight" Value="SemiBold"/>
-        <Setter Property="Foreground" Value="{StaticResource Text.Primary}"/>
-        <Setter Property="HorizontalContentAlignment" Value="Center"/>
-        <Setter Property="VerticalContentAlignment" Value="Center"/>
-        <Setter Property="Background" Value="#35FFFFFF"/>
-        <Setter Property="BorderThickness" Value="0"/>
-        <Setter Property="Cursor" Value="Hand"/>
-        <Setter Property="VerticalAlignment" Value="Center"/>
-        <Setter Property="Margin" Value="4,0,0,0"/>
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="Button">
-                    <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="11">
-                        <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
-                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
-                    </Border>
-                    <ControlTemplate.Triggers>
-                        <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Bd" Property="Background" Value="#50FFFFFF"/>
-                        </Trigger>
-                    </ControlTemplate.Triggers>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-    </Style>
-
-    <Style x:Key="GlassRowKillButtonExtracted" TargetType="Button" BasedOn="{StaticResource GlassRowKillButton}">
         <Setter Property="Height" Value="{StaticResource Glass.Metrics.KillLabelHeight}"/>
         <Setter Property="MinWidth" Value="42"/>
         <Setter Property="Padding" Value="12,0"/>
+        <Setter Property="FontSize" Value="11"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
         <Setter Property="Foreground" Value="#FFFDFDFD"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
@@ -591,7 +434,7 @@
         </Setter>
     </Style>
 
-    <Style x:Key="GlassRowKillIconButtonExtracted" TargetType="Button">
+    <Style x:Key="GlassRowKillIconButton" TargetType="Button">
         <Setter Property="Width" Value="{StaticResource Glass.Metrics.KillButton}"/>
         <Setter Property="Height" Value="{StaticResource Glass.Metrics.KillButton}"/>
         <Setter Property="Background" Value="{StaticResource Glass.Action.Danger.Fill}"/>
@@ -608,7 +451,7 @@
                                 Background="{TemplateBinding Background}"
                                 BorderThickness="0"
                                 CornerRadius="999"/>
-                        <Path Data="M0,0 L8,8 M8,0 L0,8"
+                        <Path Data="{StaticResource Glass.Icon.DismissPath}"
                               Width="8"
                               Height="8"
                               Stretch="None"
@@ -631,10 +474,13 @@
         </Setter>
     </Style>
 
-    <Style x:Key="GlassRowDismissButtonExtracted" TargetType="Button" BasedOn="{StaticResource GlassRowDismissButton}">
+    <Style x:Key="GlassRowDismissButton" TargetType="Button">
         <Setter Property="Width" Value="{StaticResource Glass.Metrics.KillButton}"/>
         <Setter Property="Height" Value="{StaticResource Glass.Metrics.KillButton}"/>
         <Setter Property="Background" Value="{StaticResource Glass.Action.Ghost.Fill}"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
@@ -646,7 +492,7 @@
                                 Background="{TemplateBinding Background}"
                                 BorderThickness="0"
                                 CornerRadius="999"/>
-                        <Path Data="M0,0 L8,8 M8,0 L0,8"
+                        <Path Data="{StaticResource Glass.Icon.DismissPath}"
                               Width="8"
                               Height="8"
                               Stretch="None"

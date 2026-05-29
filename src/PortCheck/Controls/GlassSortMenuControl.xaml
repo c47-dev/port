@@ -12,7 +12,7 @@
         <Button x:Name="PidSortButton"
                 Click="SortFieldButton_Click"
                 Style="{StaticResource GlassPopupMenuButton}"/>
-        <Border Style="{StaticResource GlassPopupMenuDivider}"/>
+        <Border Style="{StaticResource GlassDivider}"/>
         <Button x:Name="AscendingButton"
                 Click="SortOrderButton_Click"
                 Style="{StaticResource GlassPopupMenuButton}"/>

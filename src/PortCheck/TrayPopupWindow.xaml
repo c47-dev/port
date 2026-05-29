@@ -145,7 +145,7 @@
                         </Border>
                         <Button x:Name="SortFilterButton"
                                 Grid.Column="1"
-                                Style="{StaticResource GlassSortFilterButton}"
+                                Style="{StaticResource GlassRoundButton}"
                                 ToolTip="Sort and filter"
                                 Click="SortFilterButton_Click">
                             <TextBlock Text="&#xE8CB;"
@@ -181,7 +181,7 @@
                                 Height="{StaticResource Glass.Metrics.ChromeRowHeight}"
                                 Margin="0,0,8,0"
                                 Command="{Binding CloseSettingsCommand}"
-                                Style="{StaticResource GlassChromeIconButton}">
+                                Style="{StaticResource GlassRoundButton}">
                             <TextBlock Text="&#xE72B;"
                                        FontFamily="Segoe Fluent Icons"
                                        FontSize="12"
@@ -398,20 +398,8 @@
                                             <ColumnDefinition Width="*"/>
                                             <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
-                                        <Border Width="22"
-                                                Height="22"
-                                                CornerRadius="7"
-                                                Background="{StaticResource Settings.BlueIconFill}"
-                                                BorderBrush="#52FFFFFF"
-                                                BorderThickness="1"
-                                                VerticalAlignment="Center">
-                                            <TextBlock Text="&#xE8B7;"
-                                                       FontFamily="Segoe Fluent Icons"
-                                                       Foreground="White"
-                                                       FontSize="12"
-                                                       HorizontalAlignment="Center"
-                                                       VerticalAlignment="Center"/>
-                                        </Border>
+                                        <controls:SettingsIconBadge IconGlyph="&#xE8B7;"
+                                                                    IconBackground="{StaticResource Settings.BlueIconFill}"/>
                                         <TextBlock Grid.Column="1"
                                                    Text="Filter Ports"
                                                    Style="{StaticResource GlassTextPrimaryShadow}"
@@ -434,7 +422,7 @@
                                         </Border>
                                         <Button Grid.Column="3"
                                                 Command="{Binding AddExcludedPortCommand}"
-                                                Style="{StaticResource GlassCapsuleActionButtonRounded}"
+                                                Style="{StaticResource GlassCapsuleActionButton}"
                                                 VerticalAlignment="Center">
                                             <TextBlock Text="Add"
                                                        Style="{StaticResource GlassTextPrimaryShadow}"
@@ -464,7 +452,7 @@
 
                             <TextBlock Text="{Binding ExcludedPortValidationMessage}"
                                        Margin="10,0,0,18"
-                                       Foreground="{StaticResource Danger}"
+                                       Foreground="{StaticResource Glass.Action.Danger.Foreground}"
                                        Effect="{StaticResource Text.Shadow}"
                                        TextWrapping="Wrap"
                                        Visibility="{Binding HasExcludedPortValidationMessage, Converter={StaticResource BoolToVisibilityConverter}}"/>
@@ -478,20 +466,8 @@
                                             <ColumnDefinition Width="*"/>
                                             <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
-                                        <Border Width="22"
-                                                Height="22"
-                                                CornerRadius="7"
-                                                Background="{StaticResource Settings.GreenIconFill}"
-                                                BorderBrush="#52FFFFFF"
-                                                BorderThickness="1"
-                                                VerticalAlignment="Center">
-                                            <TextBlock Text="&#xE823;"
-                                                       FontFamily="Segoe Fluent Icons"
-                                                       Foreground="White"
-                                                       FontSize="12"
-                                                       HorizontalAlignment="Center"
-                                                       VerticalAlignment="Center"/>
-                                        </Border>
+                                        <controls:SettingsIconBadge IconGlyph="&#xE823;"
+                                                                    IconBackground="{StaticResource Settings.GreenIconFill}"/>
                                         <TextBlock Grid.Column="1"
                                                    Text="Scan Interval"
                                                    Style="{StaticResource GlassTextPrimaryShadow}"
@@ -521,14 +497,14 @@
 
                             <TextBlock Text="{Binding RefreshIntervalValidationMessage}"
                                        Margin="10,0,0,10"
-                                       Foreground="{StaticResource Danger}"
+                                       Foreground="{StaticResource Glass.Action.Danger.Foreground}"
                                        Effect="{StaticResource Text.Shadow}"
                                        TextWrapping="Wrap"
                                        Visibility="{Binding HasRefreshIntervalValidationMessage, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
                             <TextBlock Text="{Binding SettingsStatusMessage}"
                                        Margin="10,0,0,0"
-                                       Foreground="{StaticResource Danger}"
+                                       Foreground="{StaticResource Glass.Action.Danger.Foreground}"
                                        Effect="{StaticResource Text.Shadow}"
                                        TextWrapping="Wrap"
                                        Visibility="{Binding HasSettingsStatusMessage, Converter={StaticResource BoolToVisibilityConverter}}"/>
@@ -553,12 +529,12 @@
                             <controls:PopupActionRow IconText="&#xE74D;"
                                                      LabelText="Kill All"
                                                      ShortcutText="Ctrl+K"
-                                                     IconForeground="{StaticResource Danger}"
-                                                     LabelForeground="{StaticResource Danger}"/>
+                                                     IconForeground="{StaticResource Glass.Action.Danger.Foreground}"
+                                                     LabelForeground="{StaticResource Glass.Action.Danger.Foreground}"/>
                         </Button>
                         <Border>
                             <Border.Style>
-                                <Style TargetType="Border" BasedOn="{StaticResource GlassFooterDivider}">
+                                <Style TargetType="Border" BasedOn="{StaticResource GlassDivider}">
                                     <Setter Property="Margin" Value="0,8,0,0"/>
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding PopupSurface}" Value="{x:Static models:PopupSurface.Settings}">

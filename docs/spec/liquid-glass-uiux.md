@@ -67,6 +67,8 @@ What PortCheck ships today:
 | Tab label fade-in animation | **No** — instant visibility via triggers |
 | Refresh counter pop | **No** |
 
+**Capture QA flags (Debug):** `--capture-to=…`, optional `--capture-surface=settings|kill-confirm`.
+
 `ConfirmDialog` uses a separate dark opaque stack (`#F21E1E1E`); it is **not** part of the liquid-glass module set.
 
 ---
@@ -108,7 +110,8 @@ Apply layers in order via `Controls/GlassPopupShell` (backdrop host):
 | `Glass.Action.Danger.*` | Destructive inline actions (kill) |
 | `Glass.List.Surface.Fill/Border/Highlight` | Settings section cards only (not port-row hover) |
 | `Status.Active` | 6px listener dot `#34C759` |
-| `Danger` | Legacy solid kill; prefer `Glass.Action.Danger.*` for new work |
+| `Glass.Action.Danger.Foreground` | Destructive label/icon on glass (Kill All, validation) |
+| `Glass.Action.Danger.*` | Destructive fills/strokes for row actions |
 | `Settings.BlueIconFill`, `Settings.GreenIconFill` | Settings section leading badges |
 
 ### Alignment grid
@@ -147,8 +150,7 @@ All styles live in `src/PortCheck/Themes/LiquidGlass.xaml` unless noted.
 | Style | Target | Purpose | When to use |
 | --- | --- | --- | --- |
 | `GlassPopupMenuShell` | `Border` | Mini glass panel: tint stack + shadow | `GlassPopupShell`, sort menu host |
-| `GlassSortFilterButton` | `Button` | 32×32 chrome icon hit target | Sort/filter, generic chrome icons |
-| `GlassChromeIconButton` | `Button` | Same as above (alias) | Settings back, toolbar icons |
+| `GlassRoundButton` | `Button` | 32×32 circular chrome icon (idle rim, hover/pressed frost) | Sort/filter, Settings back, any single-glyph chrome control |
 | `GlassScrollBar` | `ScrollBar` | Thin translucent thumb | Port list scrollers |
 
 ### Typography
@@ -195,28 +197,24 @@ Hide entire tab `ScrollViewer` when `IsDockerSurfaceVisible` is false.
 | Style | Purpose | When to use |
 | --- | --- | --- |
 | `GlassFooterButton` | Transparent; hover wash | Refresh, Settings, Hide, Kill All |
-| `GlassFooterDivider` | Hairline separator | Footer toolbars |
-| `GlassPillButton` | Ghost pill base | Secondary actions |
-| `GlassCapsuleActionButton` | 32px-tall capsule | Settings Add, inline commands |
-| `GlassCapsuleActionButtonRounded` | Full capsule radius | Rounded submit actions |
-| `GlassCapsuleDangerButton` | Danger capsule | Destructive settings actions |
-| `GlassPillButtonDanger` | Danger pill | Tray menu destructive items |
+| `GlassDivider` | Hairline separator | Sort menu, footer (override `Margin` for footer) |
+| `GlassCapsuleActionButton` | 32px chrome capsule (`ChromeCapsuleRadius`) | Settings Add, inline commands |
 
 ### Inline row actions
 
 | Style | Purpose | When to use |
 | --- | --- | --- |
-| `GlassRowKillButtonExtracted` | “Kill” label, danger glass fill | Row confirm kill |
-| `GlassRowKillIconButtonExtracted` | 20px circular kill | Compact kill affordance |
-| `GlassRowDismissButtonExtracted` | 20px circular X path | Dismiss confirm / remove |
-| `Glass.Icon.CrossGeometry` | Vector cross | Prefer path over text glyph `×` |
+| `GlassRowKillButton` | “Kill” label, `Glass.Action.Danger.*` fill | Row confirm kill |
+| `GlassRowKillIconButton` | 20px circular kill (path X) | Hover row kill affordance |
+| `GlassRowDismissButton` | 20px circular ghost dismiss (path X) | Cancel confirm / remove excluded port |
+| `Glass.Icon.DismissPath` | 8×8 vector cross | Row kill icon + dismiss buttons |
 
 ### Pop-up menus
 
 | Style | Purpose | When to use |
 | --- | --- | --- |
 | `GlassPopupMenuButton` | Menu row hover | Sort field/order items |
-| `GlassPopupMenuDivider` | Menu separator | Between menu groups |
+| `GlassDivider` | Menu separator | Sort menu groups |
 
 ### Settings layout
 
@@ -243,7 +241,7 @@ Hide entire tab `ScrollViewer` when `IsDockerSurfaceVisible` is false.
 | **LocalPortRowControl** | `LocalPortRowControl.xaml` | Local listener row + kill flow | Local `ListBox` item template |
 | **DockerPortRowControl** | `DockerPortRowControl.xaml` | Docker catalog row + container kill | Docker `ListBox` item template |
 | **ExcludedPortRowControl** | `ExcludedPortRowControl.xaml` | Excluded port + remove | Settings port list |
-| **SettingsIconBadge** | `SettingsIconBadge.xaml` | 24px gradient circle + glyph | Settings section headers |
+| **SettingsIconBadge** | `SettingsIconBadge.xaml` | 22×22 gradient square + glyph | Settings section headers (Filter Ports, Scan Interval) |
 
 ### Theme assets
 
@@ -299,7 +297,7 @@ Port list rows **derive hover language** from action foundation (ghost/danger fi
 | --- | --- | --- |
 | Search capsule | `Search.Fill` / inset chrome | Row kill, footer actions |
 | Pane tabs | `GlassPaneTabLocal/Docker` | Footer or list rows |
-| Port rows | `GlassPortListItemLocal/Docker` | Footer buttons |
+| Port rows | `GlassPortListItem` | Footer buttons |
 
 ### Leading icons (local list)
 
@@ -325,8 +323,8 @@ TrayPopupWindow
 ├── InnerChromeBorder (margin 2, radius 18)
 ├── Row 0 Chrome
 │   ├── Search capsule                              … Search.*
-│   ├── GlassSortFilterButton → GlassPopupShell     … GlassSortMenuControl
-│   └── Settings header (back + title)            … GlassChromeIconButton
+│   ├── GlassRoundButton → GlassPopupShell          … GlassSortMenuControl
+│   └── Settings header (back + title)            … GlassRoundButton
 ├── Row 1 Pane tabs (if IsDockerSurfaceVisible)     … GlassPaneTab*
 ├── Row 2 Lists                                     … GlassPortListItem*
 │   ├── LocalPortRowControl / DockerPortRowControl
@@ -351,8 +349,33 @@ TrayPopupWindow
 
 ---
 
+## Module hygiene (2026-05-29)
+
+Dedup pass complete. Canonical keys:
+
+| Was | Now |
+| --- | --- |
+| `GlassSortFilterButton` / `GlassChromeIconButton` | **`GlassRoundButton`** |
+| `GlassPortListItemLocal` / `Docker` | **`GlassPortListItem`** |
+| Legacy row `*Extracted` styles | **`GlassRowKillButton`**, **`GlassRowKillIconButton`**, **`GlassRowDismissButton`** |
+| Inline popup stack | **`GlassPopupShell`** |
+| `GlassPopupMenuDivider` / `GlassFooterDivider` | **`GlassDivider`** (footer overrides `Margin`) |
+| `GlassCapsuleActionButtonRounded` / `GlassPillButton` | **`GlassCapsuleActionButton`** |
+| `GlassCapsuleDangerButton`, `GlassPillButtonDanger` | **Removed** (unused) |
+| Inline Settings icon borders | **`SettingsIconBadge`** |
+| `Glass.TintEdge`, `Glass.Overlay`, `Glass.StrokeBright` | **Removed** |
+| `Glass.Icon.CrossGeometry` | **`Glass.Icon.DismissPath`** (used by row actions) |
+| `Danger` token | **`Glass.Action.Danger.Foreground`** |
+
+**Intentional variants (keep):** `GlassCompactRowGrid` (3-col), paired row kill/dismiss templates, `ConfirmDialog` separate stack.
+
+**Rule:** One visual control → one style key. No alias-only styles.
+
+---
+
 ## Change discipline
 
 1. New reusable visual behavior → add or extend a named resource in `LiquidGlass.xaml` (or a `Controls/*` module), then reference it here.
 2. Aspirational-only experiments → document under **Not implemented** until shipped.
 3. Do not duplicate footer chip styling on port rows or nested blur shells inside Settings.
+4. Do not add alias styles (`Foo` / `FooChrome`) — extend the canonical key or document why a variant is required.

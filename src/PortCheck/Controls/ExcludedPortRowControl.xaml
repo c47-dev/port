@@ -36,6 +36,6 @@
                 VerticalAlignment="Center"
                 Command="{Binding RemoveCommand, ElementName=Root}"
                 CommandParameter="{Binding Port, ElementName=Root}"
-                Style="{StaticResource GlassRowKillIconButtonExtracted}"/>
+                Style="{StaticResource GlassRowKillIconButton}"/>
     </Grid>
 </UserControl>
