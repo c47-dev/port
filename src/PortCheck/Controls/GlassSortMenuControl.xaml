@@ -1,0 +1,23 @@
+<UserControl x:Class="PortCheck.Controls.GlassSortMenuControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Name="Root">
+    <StackPanel>
+        <Button x:Name="PortSortButton"
+                Click="SortFieldButton_Click"
+                Style="{StaticResource GlassPopupMenuButton}"/>
+        <Button x:Name="ProcessNameSortButton"
+                Click="SortFieldButton_Click"
+                Style="{StaticResource GlassPopupMenuButton}"/>
+        <Button x:Name="PidSortButton"
+                Click="SortFieldButton_Click"
+                Style="{StaticResource GlassPopupMenuButton}"/>
+        <Border Style="{StaticResource GlassPopupMenuDivider}"/>
+        <Button x:Name="AscendingButton"
+                Click="SortOrderButton_Click"
+                Style="{StaticResource GlassPopupMenuButton}"/>
+        <Button x:Name="DescendingButton"
+                Click="SortOrderButton_Click"
+                Style="{StaticResource GlassPopupMenuButton}"/>
+    </StackPanel>
+</UserControl>

@@ -1,0 +1,21 @@
+<UserControl x:Class="PortCheck.Controls.SettingsIconBadge"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Name="Root"
+             Width="24"
+             Height="24"
+             VerticalAlignment="Center">
+    <Border Width="24"
+            Height="24"
+            CornerRadius="12"
+            Background="{Binding IconBackground, ElementName=Root}"
+            SnapsToDevicePixels="True"
+            UseLayoutRounding="True">
+        <TextBlock Text="{Binding IconGlyph, ElementName=Root}"
+                   FontFamily="Segoe Fluent Icons"
+                   FontSize="11"
+                   Foreground="White"
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Center"/>
+    </Border>
+</UserControl>

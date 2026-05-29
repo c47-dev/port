@@ -22,10 +22,6 @@
     <SolidColorBrush x:Key="PaneTab.Active.Fill" Color="#72FFFFFF"/>
     <SolidColorBrush x:Key="PaneTab.Active.Stroke" Color="#A0FFFFFF"/>
     <SolidColorBrush x:Key="PaneTab.Docker.Accent" Color="#FF1D63ED"/>
-    <SolidColorBrush x:Key="PaneTab.Local.RowHover.Fill" Color="#34FFFFFF"/>
-    <SolidColorBrush x:Key="PaneTab.Local.RowHover.Stroke" Color="#82FFFFFF"/>
-    <SolidColorBrush x:Key="PaneTab.Docker.RowHover.Fill" Color="#261D63ED"/>
-    <SolidColorBrush x:Key="PaneTab.Docker.RowHover.Stroke" Color="#6F74B0FF"/>
     <SolidColorBrush x:Key="Glass.Action.Ghost.Fill" Color="#32FFFFFF"/>
     <SolidColorBrush x:Key="Glass.Action.Ghost.HoverFill" Color="#58FFFFFF"/>
     <SolidColorBrush x:Key="Glass.Action.Ghost.Stroke" Color="#66FFFFFF"/>
@@ -35,10 +31,16 @@
     <SolidColorBrush x:Key="Glass.List.Surface.Fill" Color="#12FFFFFF"/>
     <SolidColorBrush x:Key="Glass.List.Surface.Border" Color="#1FFFFFFF"/>
     <SolidColorBrush x:Key="Glass.List.Surface.Highlight" Color="#30FFFFFF"/>
-    <SolidColorBrush x:Key="Glass.List.Surface.LocalHover" Color="#22FFFFFF"/>
-    <SolidColorBrush x:Key="Glass.List.Surface.DockerHover" Color="#1B9FC4FF"/>
-    <SolidColorBrush x:Key="Glass.List.Surface.LocalBorderHover" Color="#50FFFFFF"/>
-    <SolidColorBrush x:Key="Glass.List.Surface.DockerBorderHover" Color="#4E8FC6FF"/>
+
+    <LinearGradientBrush x:Key="Settings.BlueIconFill" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#FF5AA8FF" Offset="0"/>
+        <GradientStop Color="#FF2F6FC8" Offset="1"/>
+    </LinearGradientBrush>
+
+    <LinearGradientBrush x:Key="Settings.GreenIconFill" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#FF58D777" Offset="0"/>
+        <GradientStop Color="#FF2E9E4B" Offset="1"/>
+    </LinearGradientBrush>
 
     <!-- Alignment grid: columns line up; each surface keeps its own radius / padding / height. -->
     <system:Double x:Key="Glass.Align.ContentInset" xmlns:system="clr-namespace:System;assembly=mscorlib">12</system:Double>
@@ -72,6 +74,8 @@
     <Thickness x:Key="Glass.Metrics.FooterChromePadding">0,8,0,8</Thickness>
     <CornerRadius x:Key="Glass.Metrics.FooterHoverRadius">8</CornerRadius>
 
+    <CornerRadius x:Key="Glass.Metrics.WindowCornerRadius">20</CornerRadius>
+    <CornerRadius x:Key="Glass.Metrics.WindowInnerCornerRadius">18</CornerRadius>
     <CornerRadius x:Key="Glass.Metrics.PopupMenuCornerRadius">12</CornerRadius>
     <Thickness x:Key="Glass.Metrics.PopupMenuPadding">4</Thickness>
     <CornerRadius x:Key="Glass.Metrics.PopupMenuItemCornerRadius">8</CornerRadius>
@@ -188,19 +192,16 @@
 
     <Style x:Key="GlassChromeIconButton" TargetType="Button" BasedOn="{StaticResource GlassSortFilterButton}"/>
 
+    <!-- Popup chrome: use Controls.GlassPopupShell (tint + sheen + rim + captured blur). -->
     <Style x:Key="GlassPopupMenuShell" TargetType="Border">
-        <Setter Property="Background" Value="{StaticResource PaneTab.Active.Fill}"/>
-        <Setter Property="BorderBrush" Value="{StaticResource PaneTab.Active.Stroke}"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderBrush" Value="{StaticResource Glass.RimLight}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="CornerRadius" Value="{StaticResource Glass.Metrics.PopupMenuCornerRadius}"/>
         <Setter Property="Padding" Value="{StaticResource Glass.Metrics.PopupMenuPadding}"/>
         <Setter Property="MinWidth" Value="168"/>
         <Setter Property="SnapsToDevicePixels" Value="True"/>
-        <Setter Property="Effect">
-            <Setter.Value>
-                <DropShadowEffect Color="#55000000" Opacity="0.28" BlurRadius="24" ShadowDepth="8"/>
-            </Setter.Value>
-        </Setter>
+        <Setter Property="Effect" Value="{StaticResource Glass.WindowShadow}"/>
     </Style>
 
     <Style x:Key="GlassPopupMenuButton" TargetType="Button">
@@ -777,7 +778,7 @@
         </Setter>
     </Style>
 
-    <!-- List row: full-bleed subtle lift; smaller radius than footer chips. -->
+    <!-- List row: idle flat; hover/selected use Hover.Surface (Local + Docker panes). -->
     <Style x:Key="GlassPortListItem" TargetType="ListBoxItem">
         <Setter Property="Background" Value="Transparent"/>
         <Setter Property="BorderThickness" Value="0"/>
@@ -793,60 +794,6 @@
                         <Border x:Name="Bd"
                                 Background="Transparent"
                                 BorderBrush="Transparent"
-                                BorderThickness="1"
-                                Padding="{TemplateBinding Padding}"
-                                CornerRadius="{StaticResource Glass.Metrics.ListHoverRadius}"
-                                Margin="{StaticResource Glass.Metrics.ListSurfaceInset}"
-                                ClipToBounds="True">
-                            <ContentPresenter/>
-                        </Border>
-                        <Border x:Name="Reflection"
-                                CornerRadius="{StaticResource Glass.Metrics.ListHoverRadius}"
-                                Margin="{StaticResource Glass.Metrics.ListSurfaceInset}"
-                                BorderThickness="0"
-                                IsHitTestVisible="False"
-                                Opacity="0">
-                            <Border.Background>
-                                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                    <GradientStop Offset="0" Color="#16FFFFFF"/>
-                                    <GradientStop Offset="0.2" Color="#08FFFFFF"/>
-                                    <GradientStop Offset="0.55" Color="#00FFFFFF"/>
-                                </LinearGradientBrush>
-                            </Border.Background>
-                            <Border.OpacityMask>
-                                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                    <GradientStop Offset="0" Color="#D0FFFFFF"/>
-                                    <GradientStop Offset="0.45" Color="#50FFFFFF"/>
-                                    <GradientStop Offset="1" Color="#00FFFFFF"/>
-                                </LinearGradientBrush>
-                            </Border.OpacityMask>
-                        </Border>
-                    </Grid>
-                    <ControlTemplate.Triggers>
-                        <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource Glass.List.Surface.Fill}"/>
-                            <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource Glass.List.Surface.Border}"/>
-                            <Setter TargetName="Reflection" Property="Opacity" Value="1"/>
-                        </Trigger>
-                        <Trigger Property="IsSelected" Value="True">
-                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource Glass.List.Surface.Fill}"/>
-                            <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource Glass.List.Surface.Border}"/>
-                            <Setter TargetName="Reflection" Property="Opacity" Value="1"/>
-                        </Trigger>
-                    </ControlTemplate.Triggers>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-    </Style>
-
-    <Style x:Key="GlassPortListItemLocal" TargetType="ListBoxItem" BasedOn="{StaticResource GlassPortListItem}">
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="ListBoxItem">
-                    <Grid SnapsToDevicePixels="True">
-                        <Border x:Name="Bd"
-                                Background="Transparent"
-                                BorderBrush="Transparent"
                                 BorderThickness="0"
                                 Padding="{TemplateBinding Padding}"
                                 CornerRadius="{StaticResource Glass.Metrics.ListHoverRadius}"
@@ -874,42 +821,7 @@
         </Setter>
     </Style>
 
-    <Style x:Key="GlassPortListItemDocker" TargetType="ListBoxItem" BasedOn="{StaticResource GlassPortListItem}">
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="ListBoxItem">
-                    <Grid SnapsToDevicePixels="True">
-                        <Border x:Name="Bd"
-                                Background="Transparent"
-                                BorderBrush="Transparent"
-                                BorderThickness="0"
-                                Padding="{TemplateBinding Padding}"
-                                CornerRadius="{StaticResource Glass.Metrics.ListHoverRadius}"
-                                ClipToBounds="True"
-                                Margin="{StaticResource Glass.Metrics.ListSurfaceInset}">
-                            <ContentPresenter/>
-                        </Border>
-                    </Grid>
-                    <ControlTemplate.Triggers>
-                        <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource Hover.Surface}"/>
-                            <Setter TargetName="Bd" Property="BorderBrush" Value="Transparent"/>
-                        </Trigger>
-                        <DataTrigger Binding="{Binding IsConfirmingKill}" Value="True">
-                            <Setter TargetName="Bd" Property="Background" Value="Transparent"/>
-                            <Setter TargetName="Bd" Property="BorderBrush" Value="Transparent"/>
-                        </DataTrigger>
-                        <Trigger Property="IsSelected" Value="True">
-                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource Hover.Surface}"/>
-                            <Setter TargetName="Bd" Property="BorderBrush" Value="Transparent"/>
-                        </Trigger>
-                    </ControlTemplate.Triggers>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-    </Style>
-
-    <Style x:Key="GlassEmbeddedPortListItem" TargetType="ListBoxItem" BasedOn="{StaticResource GlassPortListItemLocal}">
+    <Style x:Key="GlassEmbeddedPortListItem" TargetType="ListBoxItem" BasedOn="{StaticResource GlassPortListItem}">
         <Setter Property="Padding" Value="8,4"/>
         <Setter Property="Margin" Value="0"/>
     </Style>

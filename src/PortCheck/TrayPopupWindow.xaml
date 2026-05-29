@@ -53,29 +53,20 @@
             <Setter Property="MinWidth" Value="52"/>
         </Style>
 
-        <LinearGradientBrush x:Key="Settings.BlueIconFill" StartPoint="0,0" EndPoint="1,1">
-            <GradientStop Color="#FF5AA8FF" Offset="0"/>
-            <GradientStop Color="#FF2F6FC8" Offset="1"/>
-        </LinearGradientBrush>
-
-        <LinearGradientBrush x:Key="Settings.GreenIconFill" StartPoint="0,0" EndPoint="1,1">
-            <GradientStop Color="#FF58D777" Offset="0"/>
-            <GradientStop Color="#FF2E9E4B" Offset="1"/>
-        </LinearGradientBrush>
     </Window.Resources>
 
-    <Border x:Name="OuterChromeBorder" CornerRadius="20" ClipToBounds="True" Effect="{StaticResource Glass.WindowShadow}">
-        <Grid x:Name="OuterGlassRoot">
-            <Image x:Name="BackdropImage" Stretch="Fill" IsHitTestVisible="False"/>
-            <Border CornerRadius="20" Background="{StaticResource Glass.Tint}" IsHitTestVisible="False"/>
-            <Border CornerRadius="20" Background="{StaticResource Glass.InnerSheen}" IsHitTestVisible="False"/>
-            <Border CornerRadius="20"
-                    BorderBrush="{StaticResource Glass.RimLight}"
-                    BorderThickness="1"
-                    Background="Transparent"
-                    IsHitTestVisible="False"/>
-
-            <Border x:Name="InnerChromeBorder" CornerRadius="18" Margin="2" Background="Transparent">
+    <Border x:Name="OuterChromeBorder"
+            CornerRadius="{StaticResource Glass.Metrics.WindowCornerRadius}"
+            ClipToBounds="True"
+            Effect="{StaticResource Glass.WindowShadow}">
+        <Grid>
+            <controls:GlassPopupShell x:Name="MainGlassShell"
+                                      ShellCornerRadius="{StaticResource Glass.Metrics.WindowCornerRadius}"
+                                      UseMenuChrome="False"/>
+            <Border x:Name="InnerChromeBorder"
+                    CornerRadius="{StaticResource Glass.Metrics.WindowInnerCornerRadius}"
+                    Margin="2"
+                    Background="Transparent">
                 <Grid x:Name="InnerContentRoot">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -267,7 +258,7 @@
                                  Background="Transparent"
                                  BorderThickness="0"
                                  ItemsSource="{Binding FilteredLocalPorts}"
-                                 ItemContainerStyle="{StaticResource GlassPortListItemLocal}"
+                                 ItemContainerStyle="{StaticResource GlassPortListItem}"
                                  ScrollViewer.VerticalScrollBarVisibility="Auto"
                                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                                  ScrollViewer.CanContentScroll="True"
@@ -302,7 +293,7 @@
                                  Background="Transparent"
                                  BorderThickness="0"
                                  ItemsSource="{Binding FilteredDockerPorts}"
-                                 ItemContainerStyle="{StaticResource GlassPortListItemDocker}"
+                                 ItemContainerStyle="{StaticResource GlassPortListItem}"
                                  ScrollViewer.VerticalScrollBarVisibility="Auto"
                                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                                  ScrollViewer.CanContentScroll="True"
@@ -463,42 +454,8 @@
                                              Padding="0">
                                         <ListBox.ItemTemplate>
                                             <DataTemplate>
-                                                <Grid Style="{StaticResource GlassCompactRowGrid}">
-                                                    <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="{StaticResource Glass.Align.IconColumn}"/>
-                                                        <ColumnDefinition Width="*"/>
-                                                        <ColumnDefinition Width="{StaticResource Glass.Align.ShortcutColumn}"/>
-                                                    </Grid.ColumnDefinitions>
-                                                    <Border Grid.Column="0"
-                                                            Width="22"
-                                                            Height="22"
-                                                            CornerRadius="7"
-                                                            Background="{StaticResource Settings.BlueIconFill}"
-                                                            BorderBrush="#52FFFFFF"
-                                                            BorderThickness="1"
-                                                            HorizontalAlignment="Center"
-                                                            VerticalAlignment="Center">
-                                                        <TextBlock Text="&#xE8B7;"
-                                                                   FontFamily="Segoe Fluent Icons"
-                                                                   Foreground="White"
-                                                                   FontSize="11"
-                                                                   HorizontalAlignment="Center"
-                                                                   VerticalAlignment="Center"/>
-                                                    </Border>
-                                                    <TextBlock Grid.Column="1"
-                                                               Text="{Binding StringFormat=:{}{0}}"
-                                                               Style="{StaticResource GlassTextPrimaryShadow}"
-                                                               FontWeight="SemiBold"
-                                                               FontSize="12"
-                                                               Margin="8,0,0,0"
-                                                               VerticalAlignment="Center"/>
-                                                    <Button Grid.Column="2"
-                                                            HorizontalAlignment="Right"
-                                                            VerticalAlignment="Center"
-                                                            Command="{Binding DataContext.RemoveExcludedPortCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                            CommandParameter="{Binding}"
-                                                            Style="{StaticResource GlassRowKillIconButtonExtracted}"/>
-                                                </Grid>
+                                                <controls:ExcludedPortRowControl Port="{Binding}"
+                                                                                 RemoveCommand="{Binding DataContext.RemoveExcludedPortCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
                                             </DataTemplate>
                                         </ListBox.ItemTemplate>
                                     </ListBox>

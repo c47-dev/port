@@ -36,6 +36,8 @@ PortCheck never installs, starts, or wakes Docker Desktop or the Docker Engine.
 
 ## UI Material Contract
 
+Visual tokens, reusable modules, motion, and composition rules: [`liquid-glass-uiux.md`](liquid-glass-uiux.md).
+
 - `Kill All`, `Refresh`, `Settings`, and `Hide` define the popup's action foundation.
 - `Local Port` and `Docker Port` rows are not footer chips and must not reuse footer button architecture.
 - In the idle state, port rows render as plain content on the shared popup bubble with no per-row glass card, no persistent row border, and no persistent translucent capsule.

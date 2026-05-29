@@ -1,0 +1,33 @@
+<UserControl x:Class="PortCheck.Controls.GlassPopupShell"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Name="Root"
+             HorizontalAlignment="Stretch"
+             VerticalAlignment="Stretch"
+             SnapsToDevicePixels="True"
+             UseLayoutRounding="True"
+             Background="Transparent">
+    <Border x:Name="Chrome"
+            ClipToBounds="True">
+        <Grid>
+            <Grid x:Name="GlassBackdropHost" IsHitTestVisible="False">
+                <Border x:Name="BackdropPlate"
+                        CornerRadius="{Binding ShellCornerRadius, ElementName=Root}">
+                    <Border.Background>
+                        <ImageBrush x:Name="BackdropBrush" Stretch="UniformToFill"/>
+                    </Border.Background>
+                </Border>
+                <Border CornerRadius="{Binding ShellCornerRadius, ElementName=Root}"
+                        Background="{StaticResource Glass.Tint}"/>
+                <Border CornerRadius="{Binding ShellCornerRadius, ElementName=Root}"
+                        Background="{StaticResource Glass.InnerSheen}"/>
+                <Border CornerRadius="{Binding ShellCornerRadius, ElementName=Root}"
+                        BorderBrush="{StaticResource Glass.RimLight}"
+                        BorderThickness="1"
+                        Background="Transparent"/>
+            </Grid>
+            <ContentPresenter x:Name="ShellContentHost"
+                              Content="{Binding ShellContent, ElementName=Root}"/>
+        </Grid>
+    </Border>
+</UserControl>

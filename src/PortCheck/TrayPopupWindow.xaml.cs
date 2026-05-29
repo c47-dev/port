@@ -8,6 +8,7 @@ using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using Microsoft.Extensions.DependencyInjection;
+using PortCheck.Controls;
 using PortCheck.Helpers;
 using PortCheck.Models;
 using PortCheck.ViewModels;
@@ -21,9 +22,6 @@ public partial class TrayPopupWindow : Window
     private bool _isManualRefresh;
     private Popup? _sortMenuPopup;
     private PortPane? _lastAnimatedPane;
-    private Rect? _cachedBackdropRect;
-    private ImageSource? _cachedBackdropImage;
-
     public TrayPopupWindow()
         : this(App.Services.GetRequiredService<TrayViewModel>())
     {
@@ -142,8 +140,8 @@ public partial class TrayPopupWindow : Window
     private void ApplyRoundedClips()
     {
         ApplyRoundedClip(OuterChromeBorder, 20);
+        ApplyRoundedClip(MainGlassShell, 20);
         ApplyRoundedClip(InnerChromeBorder, 18);
-        ApplyRoundedClip(OuterGlassRoot, 20);
         ApplyRoundedClip(InnerContentRoot, 18);
     }
 
@@ -217,21 +215,8 @@ public partial class TrayPopupWindow : Window
             SearchBox.Focus();
     }
 
-    private void UpdateBackdropBlur()
-    {
-        var rect = BackdropBlurHelper.GetDeviceRect(this);
-        if (_cachedBackdropRect.HasValue &&
-            _cachedBackdropImage != null &&
-            AreRectsEquivalent(_cachedBackdropRect.Value, rect))
-        {
-            BackdropImage.Source = _cachedBackdropImage;
-            return;
-        }
-
-        _cachedBackdropRect = rect;
-        _cachedBackdropImage = BackdropBlurHelper.CaptureBlurredRegion(rect, blurRadius: 32, dimOpacity: 0.06);
-        BackdropImage.Source = _cachedBackdropImage;
-    }
+    private void UpdateBackdropBlur() =>
+        MainGlassShell.RefreshBackdrop(BackdropBlurHelper.GetDeviceRect(this));
 
     private void PortsList_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
     {
@@ -380,21 +365,10 @@ public partial class TrayPopupWindow : Window
             return;
         }
 
-        var panel = new StackPanel();
-        panel.Children.Add(CreatePopupMenuButton("Port", _viewModel.SortField == PortListSortField.Port,
-            () => _viewModel.SortField = PortListSortField.Port, new CornerRadius(8, 8, 4, 4)));
-        panel.Children.Add(CreatePopupMenuButton("Process name", _viewModel.SortField == PortListSortField.ProcessName,
-            () => _viewModel.SortField = PortListSortField.ProcessName, new CornerRadius(4, 4, 4, 4)));
-        panel.Children.Add(CreatePopupMenuButton("PID", _viewModel.SortField == PortListSortField.Pid,
-            () => _viewModel.SortField = PortListSortField.Pid, new CornerRadius(4, 4, 4, 4)));
-        panel.Children.Add(CreatePopupMenuDivider());
-        panel.Children.Add(CreatePopupMenuButton("Ascending", !_viewModel.SortDescending,
-            () => _viewModel.SortDescending = false, new CornerRadius(4, 4, 4, 4)));
-        panel.Children.Add(CreatePopupMenuButton("Descending", _viewModel.SortDescending,
-            () => _viewModel.SortDescending = true, new CornerRadius(4, 4, 8, 8)));
+        var menu = new GlassSortMenuControl { DataContext = _viewModel };
+        menu.MenuItemSelected += (_, _) => _sortMenuPopup?.SetCurrentValue(Popup.IsOpenProperty, false);
 
-        var shell = new Border { Child = panel };
-        shell.SetResourceReference(StyleProperty, "GlassPopupMenuShell");
+        var shell = new GlassPopupShell { ShellContent = menu };
 
         _sortMenuPopup = new Popup
         {
@@ -408,7 +382,12 @@ public partial class TrayPopupWindow : Window
             PopupAnimation = PopupAnimation.Fade
         };
 
-        _sortMenuPopup.Opened += (_, _) => _isProcessingAction = true;
+        _sortMenuPopup.Opened += (_, _) =>
+        {
+            _isProcessingAction = true;
+            shell.UpdateLayout();
+            shell.RefreshBackdrop();
+        };
         _sortMenuPopup.Closed += (_, _) =>
         {
             _isProcessingAction = false;
@@ -451,72 +430,6 @@ public partial class TrayPopupWindow : Window
         await _viewModel.CommitRefreshIntervalCommand.ExecuteAsync(null);
     }
 
-    private Button CreatePopupMenuButton(string label, bool isSelected, Action onSelect, CornerRadius cornerRadius)
-    {
-        var button = new Button
-        {
-            Content = CreatePopupMenuItemContent(label, isSelected),
-            BorderThickness = new Thickness(0),
-            Tag = isSelected ? "Selected" : null
-        };
-        button.SetResourceReference(StyleProperty, "GlassPopupMenuButton");
-        button.Loaded += (_, _) => ApplyPopupMenuItemCornerRadius(button, cornerRadius);
-        button.Click += (_, _) =>
-        {
-            onSelect();
-            _sortMenuPopup?.SetCurrentValue(Popup.IsOpenProperty, false);
-        };
-        return button;
-    }
-
-    private static void ApplyPopupMenuItemCornerRadius(Button button, CornerRadius cornerRadius)
-    {
-        button.ApplyTemplate();
-        if (button.Template.FindName("Bd", button) is Border border)
-            border.CornerRadius = cornerRadius;
-    }
-
-    private static Grid CreatePopupMenuItemContent(string label, bool isSelected)
-    {
-        var grid = new Grid();
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-
-        var text = new TextBlock
-        {
-            Text = label,
-            VerticalAlignment = VerticalAlignment.Center
-        };
-        text.SetResourceReference(TextBlock.ForegroundProperty, "Text.Primary");
-        text.SetResourceReference(TextBlock.EffectProperty, "Text.Shadow");
-        grid.Children.Add(text);
-
-        if (isSelected)
-        {
-            var check = new TextBlock
-            {
-                Text = "\uE73E",
-                FontFamily = new FontFamily("Segoe Fluent Icons"),
-                FontSize = 12,
-                Margin = new Thickness(8, 0, 0, 0),
-                VerticalAlignment = VerticalAlignment.Center
-            };
-            check.SetResourceReference(TextBlock.ForegroundProperty, "Text.Primary");
-            check.SetResourceReference(TextBlock.EffectProperty, "Text.Shadow");
-            Grid.SetColumn(check, 1);
-            grid.Children.Add(check);
-        }
-
-        return grid;
-    }
-
-    private Border CreatePopupMenuDivider()
-    {
-        var divider = new Border();
-        divider.SetResourceReference(StyleProperty, "GlassPopupMenuDivider");
-        return divider;
-    }
-
     private void HideToTray()
     {
         if (App.Services.GetService<TrayHost>() is TrayHost host)
@@ -553,14 +466,5 @@ public partial class TrayPopupWindow : Window
             else
                 _action();
         }
-    }
-
-    private static bool AreRectsEquivalent(Rect left, Rect right)
-    {
-        const double tolerance = 1;
-        return Math.Abs(left.X - right.X) < tolerance &&
-               Math.Abs(left.Y - right.Y) < tolerance &&
-               Math.Abs(left.Width - right.Width) < tolerance &&
-               Math.Abs(left.Height - right.Height) < tolerance;
     }
 }

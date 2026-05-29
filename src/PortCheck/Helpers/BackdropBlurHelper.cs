@@ -85,6 +85,19 @@ public static class BackdropBlurHelper
             h * dpi.DpiScaleY);
     }
 
+    public static Rect GetDeviceRect(FrameworkElement element)
+    {
+        var dpi = VisualTreeHelper.GetDpi(element);
+        var origin = element.PointToScreen(new System.Windows.Point(0, 0));
+        var w = element.ActualWidth > 0 ? element.ActualWidth : element.Width;
+        var h = element.ActualHeight > 0 ? element.ActualHeight : element.Height;
+        return new Rect(
+            origin.X,
+            origin.Y,
+            w * dpi.DpiScaleX,
+            h * dpi.DpiScaleY);
+    }
+
     private static BitmapSource? ApplyBlur(BitmapSource source, double radius, int outputWidth, int outputHeight)
     {
         var image = new System.Windows.Controls.Image
