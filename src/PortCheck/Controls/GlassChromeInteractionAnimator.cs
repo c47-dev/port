@@ -44,6 +44,7 @@ public sealed class GlassChromeInteractionAnimator
     private readonly Border _bottomSpecular;
     private readonly Border _pressGlow;
     private ImageBrush? _lensBrush;
+    private DispatcherTimer? _clearLensBackdropTimer;
 
     private bool _pointerInside;
     private bool _pressed;
@@ -117,6 +118,7 @@ public sealed class GlassChromeInteractionAnimator
         _host.MouseMove -= OnMouseMove;
         _host.PreviewMouseLeftButtonDown -= OnPreviewMouseLeftButtonDown;
         _host.PreviewMouseLeftButtonUp -= OnPreviewMouseLeftButtonUp;
+        CancelScheduledClearLensBackdrop();
         _scale.BeginAnimation(ScaleTransform.ScaleXProperty, null);
         _scale.BeginAnimation(ScaleTransform.ScaleYProperty, null);
         _rimHighlight.BeginAnimation(UIElement.OpacityProperty, null);
@@ -357,6 +359,7 @@ public sealed class GlassChromeInteractionAnimator
 
     private void ActivateLensBackdrop()
     {
+        CancelScheduledClearLensBackdrop();
         _lensPlate.Background = new SolidColorBrush(Color.FromArgb(0x28, 0xFF, 0xFF, 0xFF));
         _lensPlate.Effect = null;
 
@@ -387,14 +390,38 @@ public sealed class GlassChromeInteractionAnimator
 
     private void ScheduleClearLensBackdrop()
     {
-        _root.Dispatcher.BeginInvoke(
-            ClearLensBackdrop,
+        CancelScheduledClearLensBackdrop();
+
+        _clearLensBackdropTimer = new DispatcherTimer(
+            LensFadeDuration + TimeSpan.FromMilliseconds(20),
             DispatcherPriority.Background,
-            LensFadeDuration + TimeSpan.FromMilliseconds(20));
+            OnClearLensBackdropTimerTick,
+            _root.Dispatcher);
+        _clearLensBackdropTimer.Start();
+    }
+
+    private void OnClearLensBackdropTimerTick(object? sender, EventArgs e)
+    {
+        CancelScheduledClearLensBackdrop();
+        if (_pointerInside)
+            return;
+
+        ClearLensBackdrop();
+    }
+
+    private void CancelScheduledClearLensBackdrop()
+    {
+        if (_clearLensBackdropTimer == null)
+            return;
+
+        _clearLensBackdropTimer.Stop();
+        _clearLensBackdropTimer.Tick -= OnClearLensBackdropTimerTick;
+        _clearLensBackdropTimer = null;
     }
 
     private void ClearLensBackdrop()
     {
+        CancelScheduledClearLensBackdrop();
         _lensBrush = null;
         _lensPlate.Background = null;
         _lensPlate.Effect = null;

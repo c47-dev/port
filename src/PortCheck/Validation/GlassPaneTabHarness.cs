@@ -97,6 +97,8 @@ public static class GlassPaneTabHarness
 
         button.RaiseEvent(new MouseEventArgs(Mouse.PrimaryDevice, 0) { RoutedEvent = Mouse.MouseEnterEvent });
         button.UpdateLayout();
+        ValidationAnimationPump.Wait(TimeSpan.FromMilliseconds(260));
+        button.UpdateLayout();
 
         if (scale.ScaleX < 1.05 && scale.ScaleY < 1.05)
             yield return prefix + $"Hover scale not applied (scale={scale.ScaleX:F3},{scale.ScaleY:F3})";
@@ -109,6 +111,8 @@ public static class GlassPaneTabHarness
             yield return prefix + "Lens must not use BlurEffect on pane tabs (blurs labels)";
 
         button.RaiseEvent(new MouseEventArgs(Mouse.PrimaryDevice, 0) { RoutedEvent = Mouse.MouseLeaveEvent });
+        button.UpdateLayout();
+        ValidationAnimationPump.Wait(GlassChromeInteractionAnimator.HoverLeaveDuration + TimeSpan.FromMilliseconds(80));
         button.UpdateLayout();
 
         if (scale.ScaleX > 1.02 || scale.ScaleY > 1.02)

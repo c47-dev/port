@@ -124,6 +124,8 @@ public static class GlassRoundButtonHarness
         });
 
         button.UpdateLayout();
+        ValidationAnimationPump.Wait(TimeSpan.FromMilliseconds(260));
+        button.UpdateLayout();
 
 
 
@@ -155,6 +157,8 @@ public static class GlassRoundButtonHarness
 
         });
 
+        button.UpdateLayout();
+        ValidationAnimationPump.Wait(GlassChromeInteractionAnimator.HoverLeaveDuration + TimeSpan.FromMilliseconds(80));
         button.UpdateLayout();
 
 

@@ -42,6 +42,10 @@ public static class GlassChromeLensBackdrop
 
             return null;
 
+        if (PresentationSource.FromVisual(host) == null)
+
+            return null;
+
 
 
         var dpi = VisualTreeHelper.GetDpi(host);
