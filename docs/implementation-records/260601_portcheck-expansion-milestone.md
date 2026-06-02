@@ -27,7 +27,7 @@ PortCheck now provides a solid **Local / Docker** tray surface with liquid-glass
 
 | # | Goal | Phase |
 | --- | --- | --- |
-| G1 | User can favourite host ports; favourites survive restarts and show active or inactive rows | 1 |
+| G1 | User stars ports on Local/Docker rows; **Favourite Ports** pane tab lists pins (active or inactive) | 1 |
 | G2 | User can view K8s-related listening ports in a dedicated pane when the cluster surface is visible | 2 |
 | G3 | Local agents can list ports and request kills through a documented, authenticated local control API | 3 |
 
@@ -55,7 +55,7 @@ PortCheck now provides a solid **Local / Docker** tray surface with liquid-glass
 
 | Signal | Manifestation |
 | --- | --- |
-| Multiple surfaces | Settings, new pane/tab, optional footer, HTTP or IPC listener |
+| Multiple surfaces | Favourites pane tab, row star, later K8s tab, agent HTTP |
 | Multiple ownership boundaries | Services, ViewModel, View, new spec sections, agent contract doc |
 | Persistent state | `settings.json` schema expansion |
 | Security | Elevation, exclusion, agent auth |
@@ -67,7 +67,7 @@ PortCheck now provides a solid **Local / Docker** tray surface with liquid-glass
 
 | Phase | Title | Objective | Depends on | Exit criteria |
 | --- | --- | --- | --- | --- |
-| **1** | Favourite Ports | Spec + persistence + UI for pinned host ports | Glass foundation on `main` | Spec merged; favourites in settings; UI QA |
+| **1** | Favourite Ports | Star on port rows + **Favourite Ports** tab + persistence | Glass foundation on `main` | Spec merged; tab + star UX; no Settings add |
 | **2** | Kubernetes Ports | Spec + passive K8s discovery + K8s pane | Phase 1 spec patterns (pane gate) | Build pass; K8s pane manual QA |
 | **3** | Agent Control Plane | Local API for list/kill (+ favourites/K8s when present) | Phase 1–2 contracts stable | API contract doc; integration tests; security review |
 
@@ -121,3 +121,4 @@ flowchart LR
 | Date | Change |
 | --- | --- |
 | 2026-06-01 | Initiative created after liquid-glass foundation pushed to `main` |
+| 2026-06-02 | Phase 1–3 implementation-record docs expanded to full PRD/TDD/API contracts (see linked phase files) |
