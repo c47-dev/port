@@ -36,7 +36,7 @@ public partial class TrayPopupWindow : Window
         Loaded += async (_, _) =>
         {
             ApplyPaneVisibility(_viewModel.ActivePane);
-            FluidAnimation.SetPaneTabWidths(LocalPaneTabButton, DockerPaneTabButton, _viewModel.ActivePane);
+            FluidAnimation.SetPaneTabWidths(FavouritePaneTabButton, LocalPaneTabButton, DockerPaneTabButton, _viewModel.ActivePane);
             _lastAnimatedPane = _viewModel.ActivePane;
             UpdateSearchPlaceholder();
             ApplyRoundedClips();
@@ -100,7 +100,7 @@ public partial class TrayPopupWindow : Window
         if (_lastAnimatedPane == null)
         {
             ApplyPaneVisibility(pane);
-            FluidAnimation.SetPaneTabWidths(LocalPaneTabButton, DockerPaneTabButton, pane);
+            FluidAnimation.SetPaneTabWidths(FavouritePaneTabButton, LocalPaneTabButton, DockerPaneTabButton, pane);
             _lastAnimatedPane = pane;
             return;
         }
@@ -108,10 +108,10 @@ public partial class TrayPopupWindow : Window
         if (_lastAnimatedPane == pane)
             return;
 
-        FluidAnimation.RunTabPush(LocalPaneTabButton, DockerPaneTabButton, pane);
+        FluidAnimation.RunTabPush(FavouritePaneTabButton, LocalPaneTabButton, DockerPaneTabButton, pane);
 
-        var outgoing = _lastAnimatedPane == PortPane.Local ? LocalPortsList : DockerPortsList;
-        var incoming = pane == PortPane.Local ? LocalPortsList : DockerPortsList;
+        var outgoing = ResolvePaneList(_lastAnimatedPane.Value);
+        var incoming = ResolvePaneList(pane);
         outgoing.Visibility = Visibility.Visible;
         outgoing.Opacity = 1;
         incoming.Visibility = Visibility.Visible;
@@ -122,15 +122,21 @@ public partial class TrayPopupWindow : Window
 
     private void ApplyPaneVisibility(PortPane pane)
     {
+        var isFavourites = pane == PortPane.Favourites;
         var isLocal = pane == PortPane.Local;
+        var isDocker = pane == PortPane.Docker;
 
+        FavouritePortsList.BeginAnimation(UIElement.OpacityProperty, null);
         LocalPortsList.BeginAnimation(UIElement.OpacityProperty, null);
         DockerPortsList.BeginAnimation(UIElement.OpacityProperty, null);
 
+        FavouritePortsList.Visibility = isFavourites ? Visibility.Visible : Visibility.Collapsed;
         LocalPortsList.Visibility = isLocal ? Visibility.Visible : Visibility.Collapsed;
-        DockerPortsList.Visibility = isLocal ? Visibility.Collapsed : Visibility.Visible;
+        DockerPortsList.Visibility = isDocker ? Visibility.Visible : Visibility.Collapsed;
+        FavouritePortsList.Opacity = isFavourites ? 1 : 0;
         LocalPortsList.Opacity = isLocal ? 1 : 0;
-        DockerPortsList.Opacity = isLocal ? 0 : 1;
+        DockerPortsList.Opacity = isDocker ? 1 : 0;
+        FavouritePortsList.RenderTransform = null;
         LocalPortsList.RenderTransform = null;
         DockerPortsList.RenderTransform = null;
 
@@ -138,9 +144,20 @@ public partial class TrayPopupWindow : Window
     }
 
     private void UpdateSearchPlaceholder() =>
-        SearchPlaceholder.Text = _viewModel.ActivePane == PortPane.Docker
-            ? "Search Docker ports"
-            : "Search local ports";
+        SearchPlaceholder.Text = _viewModel.ActivePane switch
+        {
+            PortPane.Favourites => "Search favourite ports",
+            PortPane.Docker => "Search Docker ports",
+            _ => "Search local ports"
+        };
+
+    private ListBox ResolvePaneList(PortPane pane) =>
+        pane switch
+        {
+            PortPane.Favourites => FavouritePortsList,
+            PortPane.Docker => DockerPortsList,
+            _ => LocalPortsList
+        };
 
     private void ApplyRoundedClips()
     {
@@ -275,6 +292,12 @@ public partial class TrayPopupWindow : Window
             var surface = arg[prefix.Length..];
             if (surface.Equals("settings", StringComparison.OrdinalIgnoreCase))
                 _viewModel.OpenSettings();
+            else if (surface.Equals("favourites", StringComparison.OrdinalIgnoreCase))
+                _viewModel.SelectPane(PortPane.Favourites);
+            else if (surface.Equals("docker", StringComparison.OrdinalIgnoreCase))
+                _viewModel.SelectPane(PortPane.Docker);
+            else if (surface.Equals("local", StringComparison.OrdinalIgnoreCase))
+                _viewModel.SelectPane(PortPane.Local);
             else if (surface.Equals("kill-confirm", StringComparison.OrdinalIgnoreCase))
                 ApplyKillConfirmCaptureOverride();
         }

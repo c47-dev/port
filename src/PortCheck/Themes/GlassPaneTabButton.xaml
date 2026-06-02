@@ -38,6 +38,316 @@
 
 
 
+    <Style x:Key="GlassPaneTabFavourites" TargetType="{x:Type controls:GlassPaneTabButton}" BasedOn="{StaticResource GlassPaneTabBase}">
+
+        <Setter Property="Template">
+
+            <Setter.Value>
+
+                <ControlTemplate TargetType="{x:Type controls:GlassPaneTabButton}">
+
+                    <Grid x:Name="PART_Outer" RenderTransformOrigin="0.5,0.5" ClipToBounds="False"
+
+                          SnapsToDevicePixels="True" UseLayoutRounding="True">
+
+                        <Grid.RenderTransform>
+
+                            <ScaleTransform x:Name="PART_Scale" ScaleX="1" ScaleY="1"/>
+
+                        </Grid.RenderTransform>
+
+                        <Grid x:Name="PART_Root" RenderTransformOrigin="0.5,0.5" ClipToBounds="False">
+
+                            <Grid.RenderTransform>
+
+                                <TranslateTransform x:Name="PART_GelFollow" X="0" Y="0"/>
+
+                            </Grid.RenderTransform>
+
+                            <Grid x:Name="PART_Chip"
+
+                                  Width="{TemplateBinding Width}"
+
+                                  Height="{StaticResource Glass.Metrics.TabHeight}"
+
+                                  HorizontalAlignment="Left"
+
+                                  VerticalAlignment="Center"
+
+                                  RenderTransformOrigin="0.5,0.5"
+
+                                  SnapsToDevicePixels="True">
+
+                                <Grid.RenderTransform>
+
+                                    <ScaleTransform x:Name="PART_InnerPinch" ScaleX="1" ScaleY="1"/>
+
+                                </Grid.RenderTransform>
+
+                                <Border x:Name="Shell"
+
+                                        CornerRadius="{StaticResource Glass.Metrics.TabCornerRadius}"
+
+                                        Height="{StaticResource Glass.Metrics.TabHeight}"
+
+                                        Width="{TemplateBinding Width}"
+
+                                        Background="{StaticResource PaneTab.Idle.Fill}"
+
+                                        BorderBrush="#45FFFFFF"
+
+                                        BorderThickness="1"
+
+                                        SnapsToDevicePixels="True"
+
+                                        UseLayoutRounding="True"/>
+
+                                <Grid x:Name="PART_GlassStack"
+
+                                      Width="{TemplateBinding Width}"
+
+                                      Height="{StaticResource Glass.Metrics.TabHeight}"
+
+                                      ClipToBounds="True"
+
+                                      IsHitTestVisible="False"
+
+                                      SnapsToDevicePixels="True">
+
+                                    <Border x:Name="PART_ShadowHost"
+
+                                            CornerRadius="{StaticResource Glass.Metrics.TabCornerRadius}"
+
+                                            Background="Transparent" BorderThickness="0"/>
+
+                                    <Border x:Name="PART_LensPlate"
+
+                                            CornerRadius="{StaticResource Glass.Metrics.TabCornerRadius}"
+
+                                            ClipToBounds="True" BorderThickness="0" Opacity="0"/>
+
+                                    <Border x:Name="PART_Bd"
+
+                                            CornerRadius="{StaticResource Glass.Metrics.TabCornerRadius}"
+
+                                            Background="Transparent" BorderThickness="0" Opacity="0"/>
+
+                                    <Border x:Name="PART_FresnelRim"
+
+                                            CornerRadius="{StaticResource Glass.Metrics.TabCornerRadius}"
+
+                                            Background="Transparent" BorderThickness="1.25" Opacity="0">
+
+                                        <Border.BorderBrush>
+
+                                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+
+                                                <GradientStop Color="#E6FFFFFF" Offset="0"/>
+
+                                                <GradientStop Color="#55FFFFFF" Offset="0.35"/>
+
+                                                <GradientStop Color="#18FFFFFF" Offset="0.65"/>
+
+                                                <GradientStop Color="#AAFFFFFF" Offset="1"/>
+
+                                            </LinearGradientBrush>
+
+                                        </Border.BorderBrush>
+
+                                    </Border>
+
+                                    <Border x:Name="PART_RimHighlight"
+
+                                            CornerRadius="{StaticResource Glass.Metrics.TabCornerRadius}"
+
+                                            Opacity="0">
+
+                                        <Border.Background>
+
+                                            <RadialGradientBrush Center="0.35,0.22" GradientOrigin="0.35,0.22" RadiusX="0.9" RadiusY="0.9">
+
+                                                <GradientStop Color="#55FFFFFF" Offset="0"/>
+
+                                                <GradientStop Color="#00FFFFFF" Offset="0.55"/>
+
+                                            </RadialGradientBrush>
+
+                                        </Border.Background>
+
+                                    </Border>
+
+                                    <Border x:Name="PART_TopSpecular"
+
+                                            CornerRadius="{StaticResource Glass.Metrics.TabCornerRadius}"
+
+                                            VerticalAlignment="Top" Height="14" Margin="6,1,6,0" Opacity="0">
+
+                                        <Border.Background>
+
+                                            <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
+
+                                                <GradientStop Color="#AAFFFFFF" Offset="0"/>
+
+                                                <GradientStop Color="#33FFFFFF" Offset="0.45"/>
+
+                                                <GradientStop Color="#00FFFFFF" Offset="1"/>
+
+                                            </LinearGradientBrush>
+
+                                        </Border.Background>
+
+                                    </Border>
+
+                                    <Border x:Name="PART_BottomSpecular"
+
+                                            CornerRadius="{StaticResource Glass.Metrics.TabCornerRadius}"
+
+                                            VerticalAlignment="Bottom" Height="9" Margin="8,0,8,2" Opacity="0">
+
+                                        <Border.Background>
+
+                                            <LinearGradientBrush StartPoint="0.5,1" EndPoint="0.5,0">
+
+                                                <GradientStop Color="#55FFFFFF" Offset="0"/>
+
+                                                <GradientStop Color="#00FFFFFF" Offset="1"/>
+
+                                            </LinearGradientBrush>
+
+                                        </Border.Background>
+
+                                    </Border>
+
+                                    <Border x:Name="PART_PressGlow"
+
+                                            CornerRadius="{StaticResource Glass.Metrics.TabCornerRadius}"
+
+                                            Opacity="0"/>
+
+                                </Grid>
+
+                                <Grid x:Name="ContentHost"
+
+                                      VerticalAlignment="Center"
+
+                                      IsHitTestVisible="False"
+
+                                      SnapsToDevicePixels="True">
+
+                                    <Grid.ColumnDefinitions>
+
+                                        <ColumnDefinition Width="{StaticResource Glass.Metrics.TabIconSlot}"/>
+
+                                        <ColumnDefinition Width="Auto"/>
+
+                                    </Grid.ColumnDefinitions>
+
+                                    <TextBlock x:Name="TabIcon"
+
+                                               Grid.Column="0"
+
+                                               Text="&#xE734;"
+
+                                               FontFamily="Segoe Fluent Icons"
+
+                                               FontSize="15"
+
+                                               Foreground="{StaticResource Text.Secondary}"
+
+                                               HorizontalAlignment="Center"
+
+                                               VerticalAlignment="Center"
+
+                                               RenderTransformOrigin="0.5,0.5"
+
+                                               TextOptions.TextRenderingMode="ClearType"
+
+                                               TextOptions.TextFormattingMode="Display"/>
+
+                                    <TextBlock x:Name="Label"
+
+                                              Grid.Column="1"
+
+                                              Text="Favourite Ports"
+
+                                              Visibility="Collapsed"
+
+                                              Opacity="0"
+
+                                              FontSize="12"
+
+                                              FontWeight="SemiBold"
+
+                                              Foreground="{StaticResource Text.Primary}"
+
+                                              Margin="{StaticResource Glass.Metrics.TabLabelTrailing}"
+
+                                              VerticalAlignment="Center"
+
+                                              TextOptions.TextRenderingMode="ClearType"
+
+                                              TextOptions.TextFormattingMode="Display"/>
+
+                                </Grid>
+
+                            </Grid>
+
+                            <Border x:Name="PART_HitTarget"
+
+                                    Background="Transparent"
+
+                                    CornerRadius="{StaticResource Glass.Metrics.TabCornerRadius}"
+
+                                    Width="{TemplateBinding Width}"
+
+                                    Height="{StaticResource Glass.Metrics.TabHeight}"
+
+                                    HorizontalAlignment="Left"
+
+                                    VerticalAlignment="Center"
+
+                                    SnapsToDevicePixels="True"/>
+
+                        </Grid>
+
+                    </Grid>
+
+                    <ControlTemplate.Triggers>
+
+                        <DataTrigger Binding="{Binding ActivePane}" Value="{x:Static models:PortPane.Favourites}">
+
+                            <Setter TargetName="Shell" Property="Background" Value="{StaticResource PaneTab.Active.Fill}"/>
+
+                            <Setter TargetName="Shell" Property="BorderBrush" Value="{StaticResource PaneTab.Active.Stroke}"/>
+
+                            <Setter TargetName="Label" Property="Visibility" Value="Visible"/>
+
+                            <Setter TargetName="Label" Property="Opacity" Value="1"/>
+
+                            <Setter TargetName="Label" Property="Margin" Value="4,0,8,0"/>
+
+                            <Setter TargetName="TabIcon" Property="Foreground" Value="{StaticResource Text.Primary}"/>
+
+                        </DataTrigger>
+
+                        <Trigger Property="IsMouseOver" Value="True">
+
+                            <Setter TargetName="Shell" Property="BorderThickness" Value="0"/>
+
+                        </Trigger>
+
+                    </ControlTemplate.Triggers>
+
+                </ControlTemplate>
+
+            </Setter.Value>
+
+        </Setter>
+
+    </Style>
+
+
+
     <Style x:Key="GlassPaneTabLocal" TargetType="{x:Type controls:GlassPaneTabButton}" BasedOn="{StaticResource GlassPaneTabBase}">
 
         <Setter Property="Template">

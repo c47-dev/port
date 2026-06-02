@@ -12,6 +12,7 @@ public class PortInfo : INotifyPropertyChanged
 {
     private bool _isConfirmingKill;
     private bool _isKilling;
+    private bool _isFavourite;
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -87,6 +88,19 @@ public class PortInfo : INotifyPropertyChanged
             if (_isKilling != value)
             {
                 _isKilling = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    public bool IsFavourite
+    {
+        get => _isFavourite;
+        set
+        {
+            if (_isFavourite != value)
+            {
+                _isFavourite = value;
                 OnPropertyChanged();
             }
         }

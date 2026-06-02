@@ -212,25 +212,37 @@
                                     <DataTrigger Binding="{Binding PopupSurface}" Value="{x:Static models:PopupSurface.Settings}">
                                         <Setter Property="Visibility" Value="Collapsed"/>
                                     </DataTrigger>
-                                    <DataTrigger Binding="{Binding IsDockerSurfaceVisible}" Value="False">
-                                        <Setter Property="Visibility" Value="Collapsed"/>
-                                    </DataTrigger>
                                 </Style.Triggers>
                             </Style>
                         </Grid.Style>
                         <StackPanel Orientation="Horizontal"
                                     VerticalAlignment="Center"
                                     ClipToBounds="False">
+                            <controls:GlassPaneTabButton x:Name="FavouritePaneTabButton"
+                                                         Style="{StaticResource GlassPaneTabFavourites}"
+                                                         Command="{Binding SelectPaneCommand}"
+                                                         CommandParameter="{x:Static models:PortPane.Favourites}"
+                                                         Click="PaneTab_Click"/>
                             <controls:GlassPaneTabButton x:Name="LocalPaneTabButton"
                                                          Style="{StaticResource GlassPaneTabLocal}"
                                                          Command="{Binding SelectPaneCommand}"
                                                          CommandParameter="{x:Static models:PortPane.Local}"
                                                          Click="PaneTab_Click"/>
                             <controls:GlassPaneTabButton x:Name="DockerPaneTabButton"
-                                                         Style="{StaticResource GlassPaneTabDocker}"
                                                          Command="{Binding SelectPaneCommand}"
                                                          CommandParameter="{x:Static models:PortPane.Docker}"
-                                                         Click="PaneTab_Click"/>
+                                                         Click="PaneTab_Click">
+                                <controls:GlassPaneTabButton.Style>
+                                    <Style TargetType="controls:GlassPaneTabButton" BasedOn="{StaticResource GlassPaneTabDocker}">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsDockerSurfaceVisible}" Value="False">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </controls:GlassPaneTabButton.Style>
+                            </controls:GlassPaneTabButton>
                         </StackPanel>
                     </Grid>
 
@@ -251,6 +263,42 @@
                             </Style>
                         </Grid.Style>
 
+                        <ListBox x:Name="FavouritePortsList"
+                                 Panel.ZIndex="1"
+                                 Background="Transparent"
+                                 BorderThickness="0"
+                                 ItemsSource="{Binding FilteredFavouritePorts}"
+                                 ItemContainerStyle="{StaticResource GlassPortListItem}"
+                                 ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                 ScrollViewer.CanContentScroll="True"
+                                 VirtualizingPanel.IsVirtualizing="True"
+                                 VirtualizingPanel.VirtualizationMode="Recycling"
+                                 VirtualizingPanel.ScrollUnit="Pixel"
+                                 PreviewMouseWheel="PortsList_PreviewMouseWheel"
+                                 VerticalAlignment="Stretch"
+                                 Padding="0,0,0,8">
+                            <ListBox.Style>
+                                <Style TargetType="ListBox">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding ActivePane}" Value="{x:Static models:PortPane.Favourites}">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ListBox.Style>
+                            <ListBox.Resources>
+                                <Style TargetType="ScrollBar" BasedOn="{StaticResource GlassScrollBar}"/>
+                            </ListBox.Resources>
+                            <ListBox.ItemTemplate>
+                                <DataTemplate DataType="{x:Type models:PortInfo}">
+                                    <controls:LocalPortRowControl KillCommand="{Binding DataContext.KillProcessCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                  ToggleFavouriteCommand="{Binding DataContext.ToggleFavouriteCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+
                         <ListBox x:Name="LocalPortsList"
                                  Panel.ZIndex="1"
                                  Background="Transparent"
@@ -268,8 +316,11 @@
                                  Padding="0,0,0,8">
                             <ListBox.Style>
                                 <Style TargetType="ListBox">
-                                    <Setter Property="Visibility" Value="Visible"/>
+                                    <Setter Property="Visibility" Value="Collapsed"/>
                                     <Style.Triggers>
+                                        <DataTrigger Binding="{Binding ActivePane}" Value="{x:Static models:PortPane.Local}">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
                                         <DataTrigger Binding="{Binding ActivePane}" Value="{x:Static models:PortPane.Docker}">
                                             <Setter Property="Visibility" Value="Collapsed"/>
                                         </DataTrigger>
@@ -281,7 +332,8 @@
                             </ListBox.Resources>
                             <ListBox.ItemTemplate>
                                 <DataTemplate DataType="{x:Type models:PortInfo}">
-                                    <controls:LocalPortRowControl KillCommand="{Binding DataContext.KillProcessCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                                    <controls:LocalPortRowControl KillCommand="{Binding DataContext.KillProcessCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                  ToggleFavouriteCommand="{Binding DataContext.ToggleFavouriteCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
                                 </DataTemplate>
                             </ListBox.ItemTemplate>
                         </ListBox>
@@ -316,10 +368,43 @@
                             </ListBox.Resources>
                             <ListBox.ItemTemplate>
                                 <DataTemplate DataType="{x:Type models:DockerPortInfo}">
-                                    <controls:DockerPortRowControl KillCommand="{Binding DataContext.KillContainerCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                                    <controls:DockerPortRowControl KillCommand="{Binding DataContext.KillContainerCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                   ToggleFavouriteCommand="{Binding DataContext.ToggleFavouriteCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
                                 </DataTemplate>
                             </ListBox.ItemTemplate>
                         </ListBox>
+
+                        <StackPanel HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    IsHitTestVisible="False"
+                                    Panel.ZIndex="0">
+                            <StackPanel.Style>
+                                <Style TargetType="StackPanel">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <MultiDataTrigger>
+                                            <MultiDataTrigger.Conditions>
+                                                <Condition Binding="{Binding ActivePane}" Value="{x:Static models:PortPane.Favourites}"/>
+                                                <Condition Binding="{Binding FilteredFavouritePorts.Count}" Value="0"/>
+                                            </MultiDataTrigger.Conditions>
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </MultiDataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </StackPanel.Style>
+                            <TextBlock Text="&#xE734;"
+                                       FontFamily="Segoe Fluent Icons"
+                                       FontSize="16"
+                                       Foreground="{StaticResource Text.Tertiary}"
+                                       HorizontalAlignment="Center"
+                                       Margin="0,0,0,8"/>
+                            <TextBlock Text="Star a port in Local or Docker to pin it here."
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       Foreground="{StaticResource Text.Secondary}"
+                                       Effect="{StaticResource Text.Shadow}"
+                                       TextAlignment="Center"/>
+                        </StackPanel>
 
                         <TextBlock Text="No local ports listening"
                                    HorizontalAlignment="Center"
@@ -520,6 +605,9 @@
                                         <DataTrigger Binding="{Binding ActivePane}" Value="{x:Static models:PortPane.Docker}">
                                             <Setter Property="Visibility" Value="Collapsed"/>
                                         </DataTrigger>
+                                        <DataTrigger Binding="{Binding ActivePane}" Value="{x:Static models:PortPane.Favourites}">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                        </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
                             </Button.Style>
@@ -538,6 +626,9 @@
                                             <Setter Property="Visibility" Value="Collapsed"/>
                                         </DataTrigger>
                                         <DataTrigger Binding="{Binding ActivePane}" Value="{x:Static models:PortPane.Docker}">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding ActivePane}" Value="{x:Static models:PortPane.Favourites}">
                                             <Setter Property="Visibility" Value="Collapsed"/>
                                         </DataTrigger>
                                     </Style.Triggers>

@@ -10,6 +10,8 @@ public partial class LocalPortRowControl : UserControl
 {
     public static readonly DependencyProperty KillCommandProperty =
         DependencyProperty.Register(nameof(KillCommand), typeof(ICommand), typeof(LocalPortRowControl));
+    public static readonly DependencyProperty ToggleFavouriteCommandProperty =
+        DependencyProperty.Register(nameof(ToggleFavouriteCommand), typeof(ICommand), typeof(LocalPortRowControl));
 
     public LocalPortRowControl()
     {
@@ -23,6 +25,12 @@ public partial class LocalPortRowControl : UserControl
     {
         get => (ICommand?)GetValue(KillCommandProperty);
         set => SetValue(KillCommandProperty, value);
+    }
+
+    public ICommand? ToggleFavouriteCommand
+    {
+        get => (ICommand?)GetValue(ToggleFavouriteCommandProperty);
+        set => SetValue(ToggleFavouriteCommandProperty, value);
     }
 
     private PortInfo? Row => DataContext as PortInfo;
@@ -68,8 +76,6 @@ public partial class LocalPortRowControl : UserControl
         if (Row is not { } row)
             return;
 
-        ActiveDot.Visibility = row.IsDockerPublished ? Visibility.Collapsed : Visibility.Visible;
-        DockerLeadingIcon.Visibility = row.IsDockerPublished ? Visibility.Visible : Visibility.Collapsed;
         NormalRow.Visibility = row.IsConfirmingKill ? Visibility.Collapsed : Visibility.Visible;
         ConfirmRow.Visibility = row.IsConfirmingKill ? Visibility.Visible : Visibility.Collapsed;
         ProcessingText.Visibility = row.IsKilling ? Visibility.Visible : Visibility.Collapsed;

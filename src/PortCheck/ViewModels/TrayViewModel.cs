@@ -17,6 +17,7 @@ public partial class TrayViewModel : ObservableObject
     private readonly DockerContainerStopService _dockerStop;
     private readonly SettingsService _settingsService;
     private readonly PortExclusionService _portExclusionService;
+    private readonly FavouritePortsService _favouritePortsService;
     private readonly Dispatcher _dispatcher;
     private readonly bool _dockerCatalogEnabled;
 
@@ -35,6 +36,15 @@ public partial class TrayViewModel : ObservableObject
 
     [ObservableProperty]
     private ObservableCollection<DockerPortInfo> _filteredDockerPorts = new();
+
+    [ObservableProperty]
+    private ObservableCollection<PortInfo> _favouritePorts = new();
+
+    [ObservableProperty]
+    private ObservableCollection<PortInfo> _filteredFavouritePorts = new();
+
+    [ObservableProperty]
+    private ObservableCollection<int> _favouritePortNumbers = new();
 
     [ObservableProperty]
     private ObservableCollection<int> _userExcludedPorts = new();
@@ -85,6 +95,7 @@ public partial class TrayViewModel : ObservableObject
         DockerContainerStopService dockerStop,
         SettingsService settingsService,
         PortExclusionService portExclusionService,
+        FavouritePortsService favouritePortsService,
         IConfiguration configuration,
         Dispatcher dispatcher)
     {
@@ -94,6 +105,7 @@ public partial class TrayViewModel : ObservableObject
         _dockerStop = dockerStop;
         _settingsService = settingsService;
         _portExclusionService = portExclusionService;
+        _favouritePortsService = favouritePortsService;
         _dispatcher = dispatcher;
         _dockerCatalogEnabled = configuration.GetValue("appSettings:dockerCatalogEnabled", true);
 
@@ -102,11 +114,18 @@ public partial class TrayViewModel : ObservableObject
         RefreshIntervalSeconds = Math.Clamp(settings.RefreshIntervalSeconds ?? configuration.GetValue("appSettings:refreshIntervalSeconds", 5), 3, 20);
         RefreshIntervalInput = RefreshIntervalSeconds.ToString();
         UserExcludedPorts = new ObservableCollection<int>(_portExclusionService.UserExcludedPorts);
+        FavouritePortNumbers = new ObservableCollection<int>(_favouritePortsService.LoadFavouritePorts());
     }
 
     public int LocalPortCount => LocalPorts.Count;
     public int DockerPortCount => DockerPorts.Count;
-    public int ActivePanePortCount => ActivePane == PortPane.Docker ? DockerPortCount : LocalPortCount;
+    public int FavouritePortCount => FavouritePorts.Count;
+    public int ActivePanePortCount => ActivePane switch
+    {
+        PortPane.Favourites => FavouritePortCount,
+        PortPane.Docker => DockerPortCount,
+        _ => LocalPortCount
+    };
     public bool IsSettingsSurface => PopupSurface == PopupSurface.Settings;
     public bool IsPortsSurface => PopupSurface == PopupSurface.Ports;
     public bool HasExcludedPortValidationMessage => !string.IsNullOrWhiteSpace(ExcludedPortValidationMessage);
@@ -179,6 +198,17 @@ public partial class TrayViewModel : ObservableObject
         OnPropertyChanged(nameof(HasUserExcludedPorts));
     }
 
+    partial void OnFavouritePortsChanged(ObservableCollection<PortInfo> value)
+    {
+        OnPropertyChanged(nameof(FavouritePortCount));
+        OnPropertyChanged(nameof(ActivePanePortCount));
+    }
+
+    partial void OnFavouritePortNumbersChanged(ObservableCollection<int> value)
+    {
+        OnPropertyChanged(nameof(FavouritePortCount));
+    }
+
     public async Task InitializeAsync()
     {
         await RefreshPortsAsync();
@@ -186,6 +216,8 @@ public partial class TrayViewModel : ObservableObject
     }
 
     public void StopAutoRefresh() => _refreshCancellation?.Cancel();
+
+    public bool IsFavourite(int hostPort) => FavouritePortNumbers.Contains(hostPort);
 
     [RelayCommand]
     public void OpenSettings()
@@ -210,6 +242,7 @@ public partial class TrayViewModel : ObservableObject
 
         _portExclusionService.SetUserExcludedPorts(UserExcludedPorts.Append(port));
         UserExcludedPorts = new ObservableCollection<int>(_portExclusionService.UserExcludedPorts);
+        FavouritePortNumbers = new ObservableCollection<int>(_favouritePortsService.PruneExcludedPorts(FavouritePortNumbers));
         ExcludedPortInput = string.Empty;
         SettingsStatusMessage = string.Empty;
 
@@ -221,6 +254,7 @@ public partial class TrayViewModel : ObservableObject
     {
         _portExclusionService.SetUserExcludedPorts(UserExcludedPorts.Where(existing => existing != port));
         UserExcludedPorts = new ObservableCollection<int>(_portExclusionService.UserExcludedPorts);
+        FavouritePortNumbers = new ObservableCollection<int>(_favouritePortsService.PruneExcludedPorts(FavouritePortNumbers));
         SettingsStatusMessage = string.Empty;
 
         await PersistSettingsAndRefreshAsync();
@@ -289,12 +323,23 @@ public partial class TrayViewModel : ObservableObject
             if (ct.IsCancellationRequested)
                 return;
 
+            var favouritePortSet = FavouritePortNumbers.ToHashSet();
             var dockerHostPorts = dockerVisible
                 ? dockerRows.Select(r => r.HostPort).ToHashSet()
                 : new HashSet<int>();
 
             foreach (var port in visibleLocalPorts)
+            {
                 port.IsDockerPublished = dockerHostPorts.Contains(port.Port);
+                port.IsFavourite = favouritePortSet.Contains(port.Port);
+            }
+
+            foreach (var row in dockerRows)
+                row.IsFavourite = favouritePortSet.Contains(row.HostPort);
+
+            var favouriteRows = _favouritePortsService.BuildFavouriteDisplayRows(FavouritePortNumbers, visibleLocalPorts).ToList();
+            foreach (var row in favouriteRows)
+                row.IsFavourite = true;
 
             var switchToLocalPane = ActivePane == PortPane.Docker && !dockerVisible;
 
@@ -310,13 +355,21 @@ public partial class TrayViewModel : ObservableObject
                     dockerRows,
                     row => (row.ContainerId, row.HostPort, row.ContainerPort, row.HostAddress, row.Protocol),
                     PreserveDockerRowState);
+                ReconcileCollection(
+                    FavouritePorts,
+                    favouriteRows,
+                    port => port.Port,
+                    PreserveLocalRowState);
+
                 IsDockerSurfaceVisible = dockerVisible;
                 if (switchToLocalPane)
                     ActivePane = PortPane.Local;
                 ApplyFilter();
                 OnPropertyChanged(nameof(LocalPortCount));
                 OnPropertyChanged(nameof(DockerPortCount));
+                OnPropertyChanged(nameof(FavouritePortCount));
                 OnPropertyChanged(nameof(HasUserExcludedPorts));
+                OnPropertyChanged(nameof(ActivePanePortCount));
             });
         }
         catch (Exception ex)
@@ -341,6 +394,17 @@ public partial class TrayViewModel : ObservableObject
     }
 
     [RelayCommand]
+    public void ToggleFavourite(int port)
+    {
+        FavouritePortNumbers = new ObservableCollection<int>(_favouritePortsService.ToggleFavourite(port));
+        ApplyFavouriteFlags();
+        RebuildFavouriteRows();
+        ApplyFilter();
+        OnPropertyChanged(nameof(FavouritePortCount));
+        OnPropertyChanged(nameof(ActivePanePortCount));
+    }
+
+    [RelayCommand]
     public async Task KillProcessAsync(PortInfo? port)
     {
         if (port is not { IsActive: true } || _portExclusionService.IsExcluded(port.Port))
@@ -354,7 +418,7 @@ public partial class TrayViewModel : ObservableObject
             await RefreshPortsAsync();
             if (!success)
             {
-                if (LocalPorts.Contains(port))
+                if (LocalPorts.Contains(port) || FavouritePorts.Contains(port))
                     port.IsKilling = false;
 
                 if (!Helpers.AdminHelper.IsRunningAsAdministrator())
@@ -454,7 +518,8 @@ public partial class TrayViewModel : ObservableObject
         _settingsService.Save(new UserSettings
         {
             RefreshIntervalSeconds = RefreshIntervalSeconds,
-            UserExcludedPorts = UserExcludedPorts.ToArray()
+            UserExcludedPorts = UserExcludedPorts.ToArray(),
+            FavouritePorts = _favouritePortsService.PruneExcludedPorts(FavouritePortNumbers)
         });
     }
 
@@ -474,6 +539,26 @@ public partial class TrayViewModel : ObservableObject
     private void ApplyFilter()
     {
         var q = SearchQuery.Trim();
+
+        if (ActivePane == PortPane.Favourites)
+        {
+            IEnumerable<PortInfo> favouriteSource = FavouritePorts;
+            if (!string.IsNullOrEmpty(q))
+            {
+                favouriteSource = favouriteSource.Where(p =>
+                    p.Port.ToString().Contains(q, StringComparison.Ordinal) ||
+                    (p.ProcessName?.Contains(q, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                    p.Pid.ToString().Contains(q, StringComparison.Ordinal));
+            }
+
+            ReconcileCollection(
+                FilteredFavouritePorts,
+                SortLocalRows(favouriteSource).ToList(),
+                port => port.Port,
+                PreserveLocalRowState);
+            OnPropertyChanged(nameof(ActivePanePortCount));
+            return;
+        }
 
         if (ActivePane == PortPane.Docker)
         {
@@ -513,6 +598,36 @@ public partial class TrayViewModel : ObservableObject
             port => (port.Pid, port.Port, port.Address));
         OnPropertyChanged(nameof(LocalPortCount));
         OnPropertyChanged(nameof(ActivePanePortCount));
+    }
+
+    private void ApplyFavouriteFlags()
+    {
+        var favouriteSet = FavouritePortNumbers.ToHashSet();
+
+        foreach (var port in LocalPorts)
+            port.IsFavourite = favouriteSet.Contains(port.Port);
+
+        foreach (var port in FilteredLocalPorts)
+            port.IsFavourite = favouriteSet.Contains(port.Port);
+
+        foreach (var row in DockerPorts)
+            row.IsFavourite = favouriteSet.Contains(row.HostPort);
+
+        foreach (var row in FilteredDockerPorts)
+            row.IsFavourite = favouriteSet.Contains(row.HostPort);
+    }
+
+    private void RebuildFavouriteRows()
+    {
+        var favouriteRows = _favouritePortsService.BuildFavouriteDisplayRows(FavouritePortNumbers, LocalPorts).ToList();
+        foreach (var row in favouriteRows)
+            row.IsFavourite = true;
+
+        ReconcileCollection(
+            FavouritePorts,
+            favouriteRows,
+            port => port.Port,
+            PreserveLocalRowState);
     }
 
     private static List<DockerPortInfo> BuildInferredDockerRows(IReadOnlyList<PortInfo> localPorts)
@@ -666,11 +781,13 @@ public partial class TrayViewModel : ObservableObject
     {
         next.IsKilling = existing.IsKilling;
         next.IsConfirmingKill = existing.IsConfirmingKill;
+        next.IsFavourite = existing.IsFavourite;
     }
 
     private static void PreserveDockerRowState(DockerPortInfo existing, DockerPortInfo next)
     {
         next.IsKilling = existing.IsKilling;
         next.IsConfirmingKill = existing.IsConfirmingKill;
+        next.IsFavourite = existing.IsFavourite;
     }
 }

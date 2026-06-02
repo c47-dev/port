@@ -13,6 +13,7 @@ public static class FluidAnimation
 {
     // TabIconSlot(32) + label gap(4) + label + trailing(8)
     public const double TabCollapsedWidth = 32;
+    public const double TabFavouritesExpandedWidth = 126;
     public const double TabLocalExpandedWidth = 106;
     public const double TabDockerExpandedWidth = 118;
 
@@ -64,10 +65,12 @@ public static class FluidAnimation
         });
     }
 
-    public static void SetPaneTabWidths(Button localTab, Button dockerTab, PortPane activePane)
+    public static void SetPaneTabWidths(Button favouritesTab, Button localTab, Button dockerTab, PortPane activePane)
     {
+        favouritesTab.BeginAnimation(FrameworkElement.WidthProperty, null);
         localTab.BeginAnimation(FrameworkElement.WidthProperty, null);
         dockerTab.BeginAnimation(FrameworkElement.WidthProperty, null);
+        favouritesTab.Width = activePane == PortPane.Favourites ? TabFavouritesExpandedWidth : TabCollapsedWidth;
         localTab.Width = activePane == PortPane.Local ? TabLocalExpandedWidth : TabCollapsedWidth;
         dockerTab.Width = activePane == PortPane.Docker ? TabDockerExpandedWidth : TabCollapsedWidth;
     }
@@ -75,8 +78,9 @@ public static class FluidAnimation
     /// <summary>
     /// Animate tab chip width so the expanding pill pushes its sibling (Mail Smart Categories).
     /// </summary>
-    public static void RunTabPush(Button localTab, Button dockerTab, PortPane activePane)
+    public static void RunTabPush(Button favouritesTab, Button localTab, Button dockerTab, PortPane activePane)
     {
+        AnimateTabWidth(favouritesTab, activePane == PortPane.Favourites ? TabFavouritesExpandedWidth : TabCollapsedWidth);
         AnimateTabWidth(localTab, activePane == PortPane.Local ? TabLocalExpandedWidth : TabCollapsedWidth);
         AnimateTabWidth(dockerTab, activePane == PortPane.Docker ? TabDockerExpandedWidth : TabCollapsedWidth);
     }

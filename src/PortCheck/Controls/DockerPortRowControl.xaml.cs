@@ -10,6 +10,8 @@ public partial class DockerPortRowControl : UserControl
 {
     public static readonly DependencyProperty KillCommandProperty =
         DependencyProperty.Register(nameof(KillCommand), typeof(ICommand), typeof(DockerPortRowControl));
+    public static readonly DependencyProperty ToggleFavouriteCommandProperty =
+        DependencyProperty.Register(nameof(ToggleFavouriteCommand), typeof(ICommand), typeof(DockerPortRowControl));
 
     public DockerPortRowControl()
     {
@@ -23,6 +25,12 @@ public partial class DockerPortRowControl : UserControl
     {
         get => (ICommand?)GetValue(KillCommandProperty);
         set => SetValue(KillCommandProperty, value);
+    }
+
+    public ICommand? ToggleFavouriteCommand
+    {
+        get => (ICommand?)GetValue(ToggleFavouriteCommandProperty);
+        set => SetValue(ToggleFavouriteCommandProperty, value);
     }
 
     private DockerPortInfo? Row => DataContext as DockerPortInfo;

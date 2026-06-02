@@ -43,6 +43,12 @@ Pane tabs borrow **iOS 18 Mail Smart Categories** metaphor: horizontal chips, id
 
 ---
 
+Additional Phase 1 pane-tab contract:
+
+- The pane-tab row includes **Favourite Ports**, `Local Port`, and `Docker Port`.
+- The Favourite and Local tabs always remain visible.
+- Hide only the Docker tab button when `IsDockerSurfaceVisible` is false.
+
 ## Runtime implementation (actual)
 
 What PortCheck ships today:
@@ -170,19 +176,21 @@ All styles live in `src/PortCheck/Themes/LiquidGlass.xaml` unless noted.
 | `GlassActionRowGrid` | Icon 20 + Port 56 + * + Shortcut 44 | `LocalPortRowControl`, `DockerPortRowControl` (4-col) |
 | `GlassCompactRowGrid` | Icon 20 + * + Shortcut 44 | `PopupActionRow`, footer actions, 3-col rows |
 
-### Pane tab bar (Local Port / Docker Port)
+### Pane tab bar (Favourite Ports / Local Port / Docker Port)
 
 Also called **pane tabs** or **Smart Category chips** (not a separate `TabBar` control).
 
 | Artifact | Name |
 | --- | --- |
 | XAML region | `TrayPopupWindow` Grid Row 1 pane-tab host (`ClipToBounds=False`, same overflow model as chrome row) |
-| Buttons | `LocalPaneTabButton`, `DockerPaneTabButton` |
+| Buttons | `FavouritePaneTabButton`, `LocalPaneTabButton`, `DockerPaneTabButton` |
 | Styles | `GlassPaneTabBase` → `GlassPaneTabLocal`, `GlassPaneTabDocker` |
 | Tokens | `PaneTab.Idle.Fill`, `PaneTab.Active.Fill`, `PaneTab.Active.Stroke`, `PaneTab.Docker.Accent` |
 | Motion | `FluidAnimation.RunTabPush`, `PopIcon` |
 
-Hide entire pane-tab row when `IsDockerSurfaceVisible` is false.
+Phase 1 adds `GlassPaneTabFavourites` with the same hover glass stack as the existing pane tabs and a star glyph as its idle icon.
+
+The Favourite and Local tabs always remain visible. Hide only the Docker tab button when `IsDockerSurfaceVisible` is false.
 
 ### Lists
 
@@ -192,6 +200,8 @@ Hide entire pane-tab row when `IsDockerSurfaceVisible` is false.
 | `GlassEmbeddedPortListItem` | Settings excluded-port list | Based on `GlassPortListItem`; extra padding |
 
 **Idle rule:** row background transparent. **Hover/selected/confirm:** surface appears per `portcheck.md` UI Material Contract.
+
+Favourite rows reuse the Local row template. The row star remains visible while a port is pinned, even when the row is not hovered.
 
 ### Footer & actions (action foundation)
 

@@ -7,6 +7,7 @@ public class DockerPortInfo : INotifyPropertyChanged
 {
     private bool _isConfirmingKill;
     private bool _isKilling;
+    private bool _isFavourite;
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -72,6 +73,18 @@ public class DockerPortInfo : INotifyPropertyChanged
             if (_isKilling == value)
                 return;
             _isKilling = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public bool IsFavourite
+    {
+        get => _isFavourite;
+        set
+        {
+            if (_isFavourite == value)
+                return;
+            _isFavourite = value;
             OnPropertyChanged();
         }
     }

@@ -117,6 +117,7 @@ public partial class App : Application
         services.AddSingleton(_ => new SettingsService(refreshInterval));
         services.AddSingleton<ProtectedPortCatalogService>();
         services.AddSingleton<PortExclusionService>();
+        services.AddSingleton<FavouritePortsService>();
 
         services.AddSingleton<TrayViewModel>(sp => new TrayViewModel(
             sp.GetRequiredService<PortScannerService>(),
@@ -125,6 +126,7 @@ public partial class App : Application
             sp.GetRequiredService<DockerContainerStopService>(),
             sp.GetRequiredService<SettingsService>(),
             sp.GetRequiredService<PortExclusionService>(),
+            sp.GetRequiredService<FavouritePortsService>(),
             sp.GetRequiredService<IConfiguration>(),
             Current.Dispatcher));
 

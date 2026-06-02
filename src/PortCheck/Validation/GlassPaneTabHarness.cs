@@ -19,6 +19,7 @@ public static class GlassPaneTabHarness
         try
         {
             var failures = new List<string>();
+            failures.AddRange(ValidateStyle("GlassPaneTabFavourites", "TabIcon"));
             failures.AddRange(ValidateStyle("GlassPaneTabLocal", "TabIcon"));
             failures.AddRange(ValidateStyle("GlassPaneTabDocker", "TabIconPopTarget"));
 
