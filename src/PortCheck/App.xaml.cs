@@ -43,6 +43,12 @@ public partial class App : Application
 
     protected override async void OnStartup(StartupEventArgs e)
     {
+        if (IsValidateFavouritePorts(e.Args))
+        {
+            var outDir = ResolveValidateGlassOutputDir(e.Args, "portcheck-favourite-ports-validate");
+            Environment.Exit(FavouritePortsHarness.Run(outDir));
+        }
+
         if (IsValidateGlassPaneTab(e.Args))
         {
             var outDir = ResolveValidateGlassOutputDir(e.Args, "portcheck-glass-pane-tab-validate");
@@ -130,7 +136,10 @@ public partial class App : Application
         args.Any(arg => arg.StartsWith("--capture-to=", StringComparison.OrdinalIgnoreCase));
 
     private static bool IsGlassValidationRequest(IEnumerable<string> args) =>
-        IsValidateGlassRoundButton(args) || IsValidateGlassPaneTab(args);
+        IsValidateGlassRoundButton(args) || IsValidateGlassPaneTab(args) || IsValidateFavouritePorts(args);
+
+    private static bool IsValidateFavouritePorts(IEnumerable<string> args) =>
+        ArgsContain(args, "--validate-favourite-ports");
 
     private static bool IsValidateGlassRoundButton(IEnumerable<string> args) =>
         ArgsContain(args, "--validate-glass-round-button");

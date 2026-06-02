@@ -14,13 +14,15 @@ public sealed class SettingsService
     };
 
     private readonly int _defaultRefreshIntervalSeconds;
+    private readonly string? _settingsFilePath;
 
-    public SettingsService(int defaultRefreshIntervalSeconds)
+    public SettingsService(int defaultRefreshIntervalSeconds, string? settingsFilePath = null)
     {
         _defaultRefreshIntervalSeconds = ClampRefreshInterval(defaultRefreshIntervalSeconds);
+        _settingsFilePath = settingsFilePath;
     }
 
-    public string SettingsFilePath => Path.Combine(
+    public string SettingsFilePath => _settingsFilePath ?? Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
         "PortCheck",
         "settings.json");
@@ -32,7 +34,8 @@ public sealed class SettingsService
             return new UserSettings
             {
                 RefreshIntervalSeconds = _defaultRefreshIntervalSeconds,
-                UserExcludedPorts = Array.Empty<int>()
+                UserExcludedPorts = Array.Empty<int>(),
+                FavouritePorts = Array.Empty<int>()
             };
         }
 
@@ -44,7 +47,8 @@ public sealed class SettingsService
             return new UserSettings
             {
                 RefreshIntervalSeconds = ClampRefreshInterval(settings?.RefreshIntervalSeconds ?? _defaultRefreshIntervalSeconds),
-                UserExcludedPorts = NormalizePorts(settings?.UserExcludedPorts)
+                UserExcludedPorts = NormalizePorts(settings?.UserExcludedPorts),
+                FavouritePorts = NormalizePorts(settings?.FavouritePorts)
             };
         }
         catch
@@ -52,7 +56,8 @@ public sealed class SettingsService
             return new UserSettings
             {
                 RefreshIntervalSeconds = _defaultRefreshIntervalSeconds,
-                UserExcludedPorts = Array.Empty<int>()
+                UserExcludedPorts = Array.Empty<int>(),
+                FavouritePorts = Array.Empty<int>()
             };
         }
     }
@@ -66,16 +71,13 @@ public sealed class SettingsService
         var payload = new UserSettingsDocument
         {
             RefreshIntervalSeconds = ClampRefreshInterval(settings.RefreshIntervalSeconds ?? _defaultRefreshIntervalSeconds),
-            UserExcludedPorts = NormalizePorts(settings.UserExcludedPorts).ToList()
+            UserExcludedPorts = NormalizePorts(settings.UserExcludedPorts).ToList(),
+            FavouritePorts = NormalizePorts(settings.FavouritePorts).ToList()
         };
 
         var tempPath = $"{path}.tmp";
         File.WriteAllText(tempPath, JsonSerializer.Serialize(payload, JsonOptions));
-
-        if (File.Exists(path))
-            File.Replace(tempPath, path, null);
-        else
-            File.Move(tempPath, path);
+        File.Move(tempPath, path, overwrite: true);
     }
 
     private static int ClampRefreshInterval(int value) => Math.Clamp(value, 3, 20);
@@ -92,5 +94,7 @@ public sealed class SettingsService
         public int? RefreshIntervalSeconds { get; init; }
 
         public List<int>? UserExcludedPorts { get; init; }
+
+        public List<int>? FavouritePorts { get; init; }
     }
 }

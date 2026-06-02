@@ -10,6 +10,11 @@ public sealed class PortExclusionService
         _protectedPorts = protectedPortCatalog.ProtectedPorts;
     }
 
+    public PortExclusionService(IReadOnlySet<int> protectedPorts)
+    {
+        _protectedPorts = protectedPorts;
+    }
+
     public IReadOnlySet<int> ProtectedPorts => _protectedPorts;
 
     public IReadOnlyList<int> UserExcludedPorts => _userExcludedPorts.OrderBy(port => port).ToArray();

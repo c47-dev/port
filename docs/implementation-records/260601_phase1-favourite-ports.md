@@ -4,7 +4,7 @@
 | --- | --- |
 | Initiative | [260601_portcheck-expansion-milestone.md](260601_portcheck-expansion-milestone.md) |
 | Phase | 1 of 3 |
-| Status | `planned` |
+| Status | `in_progress` |
 | Depends on | Liquid-glass UI foundation on `main` |
 | Governing authority | `docs/spec/portcheck.md`, `docs/spec/liquid-glass-uiux.md` |
 | Estimated scale | **Medium** (new pane tab + row star + persistence) |
@@ -88,7 +88,7 @@ PortCheck optimizes for **discovery and termination** of whatever is listening *
 - [ ] `docs/spec/portcheck.md` — Favourite Ports + `PortPane.Favourites`.
 - [ ] `docs/spec/liquid-glass-uiux.md` — third tab style `GlassPaneTabFavourites`.
 - [ ] `settings.json` documents `favouritePorts`.
-- [ ] `FavouritePortsHarness` PASS (merge logic).
+- [x] `FavouritePortsHarness` PASS (merge logic).
 - [ ] Desktop UI QA: star on hover, tab switch, inactive row, restart — **no Settings favourites QA**.
 - [ ] No regression: Local/Docker panes, exclusion, tab animations.
 
@@ -338,3 +338,4 @@ Prune excluded ports on `Load()` / when user saves excluded ports in Settings (b
 | 2026-06-01 | Initial plan (strip + Settings add) |
 | 2026-06-02 | Expanded PRD/TDD |
 | 2026-06-02 | **UX:** star on list hover + **Favourite Ports** pane tab; **removed** Settings add + chip strip |
+| 2026-06-03 | Harness groundwork started: `FavouritePortsService`, `SettingsService` persistence path injection, `FavouritePortsHarness`, and exclusion-backed prune/merge validation |
