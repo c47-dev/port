@@ -23,7 +23,8 @@ public sealed class ProtectedPortCatalogService
     {
         var path = Path.Combine(AppContext.BaseDirectory, "Config", "protected-ports.json");
         if (!File.Exists(path))
-            throw new InvalidOperationException($"Missing protected port catalog: {path}");
+            throw new InvalidOperationException(
+                $"Missing protected port catalog: {path}. Copy the entire publish folder (including Config\\), not only PortCheck.exe.");
 
         using var stream = File.OpenRead(path);
         var document = JsonSerializer.Deserialize<ProtectedPortsDocument>(stream, JsonOptions);

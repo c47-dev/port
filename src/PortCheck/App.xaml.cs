@@ -3,6 +3,7 @@ using System.Windows;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using PortCheck.Services;
+using PortCheck.Validation;
 using PortCheck.ViewModels;
 
 namespace PortCheck;
@@ -13,6 +14,9 @@ public partial class App : Application
 
     public App()
     {
+        if (IsGlassValidationRequest(Environment.GetCommandLineArgs()))
+            return;
+
         DispatcherUnhandledException += (_, e) =>
         {
             MessageBox.Show($"An error occurred: {e.Exception.Message}", "PortCheck",
@@ -20,14 +24,41 @@ public partial class App : Application
             e.Handled = true;
         };
 
-        var services = new ServiceCollection();
-        ConfigureServices(services);
-        Services = services.BuildServiceProvider();
+        try
+        {
+            var services = new ServiceCollection();
+            ConfigureServices(services);
+            Services = services.BuildServiceProvider();
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(
+                $"{ex.Message}\n\nRun PortCheck.exe from the full publish folder (see README) and approve the UAC prompt for Release builds.",
+                "PortCheck",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+            Shutdown(1);
+        }
     }
 
     protected override async void OnStartup(StartupEventArgs e)
     {
+        if (IsValidateGlassPaneTab(e.Args))
+        {
+            var outDir = ResolveValidateGlassOutputDir(e.Args, "portcheck-glass-pane-tab-validate");
+            Environment.Exit(GlassPaneTabHarness.Run(outDir));
+        }
+
+        if (IsValidateGlassRoundButton(e.Args))
+        {
+            var outDir = ResolveValidateGlassOutputDir(e.Args, "portcheck-glass-round-validate");
+            Environment.Exit(GlassRoundButtonHarness.Run(outDir));
+        }
+
         base.OnStartup(e);
+
+        if (Services is null)
+            return;
 
         var vm = Services.GetRequiredService<TrayViewModel>();
         await vm.InitializeAsync();
@@ -97,6 +128,31 @@ public partial class App : Application
 
     private static bool IsCaptureRequest(IEnumerable<string> args) =>
         args.Any(arg => arg.StartsWith("--capture-to=", StringComparison.OrdinalIgnoreCase));
+
+    private static bool IsGlassValidationRequest(IEnumerable<string> args) =>
+        IsValidateGlassRoundButton(args) || IsValidateGlassPaneTab(args);
+
+    private static bool IsValidateGlassRoundButton(IEnumerable<string> args) =>
+        ArgsContain(args, "--validate-glass-round-button");
+
+    private static bool IsValidateGlassPaneTab(IEnumerable<string> args) =>
+        ArgsContain(args, "--validate-glass-pane-tab");
+
+    private static bool ArgsContain(IEnumerable<string> args, string flag) =>
+        args.Any(arg => string.Equals(arg, flag, StringComparison.OrdinalIgnoreCase))
+        || Environment.GetCommandLineArgs().Any(arg => string.Equals(arg, flag, StringComparison.OrdinalIgnoreCase));
+
+    private static string ResolveValidateGlassOutputDir(IEnumerable<string> args, string defaultSubdir)
+    {
+        foreach (var arg in args.Concat(Environment.GetCommandLineArgs()))
+        {
+            const string prefix = "--validate-glass-out=";
+            if (arg.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+                return arg[prefix.Length..];
+        }
+
+        return Path.Combine(Path.GetTempPath(), defaultSubdir);
+    }
 
     private static IConfiguration BuildConfiguration()
     {

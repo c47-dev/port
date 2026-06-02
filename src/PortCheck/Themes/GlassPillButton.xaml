@@ -1,4 +1,4 @@
-<!-- GlassRoundButton: 32×32 round chrome. Motion: GlassChromeInteractionAnimator. -->
+<!-- GlassPillButton: capsule chrome (Add, etc.). Motion: GlassChromeInteractionAnimator. -->
 
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
 
@@ -6,13 +6,19 @@
 
                     xmlns:controls="clr-namespace:PortCheck.Controls">
 
-    <Style TargetType="{x:Type controls:GlassRoundButton}">
+    <Style TargetType="{x:Type controls:GlassPillButton}">
 
-        <Setter Property="Width" Value="{StaticResource Glass.Metrics.ChromeRowHeight}"/>
+        <Setter Property="MinWidth" Value="68"/>
 
         <Setter Property="Height" Value="{StaticResource Glass.Metrics.ChromeRowHeight}"/>
 
-        <Setter Property="Padding" Value="0"/>
+        <Setter Property="Padding" Value="16,0"/>
+
+        <Setter Property="FontSize" Value="12"/>
+
+        <Setter Property="FontWeight" Value="SemiBold"/>
+
+        <Setter Property="Foreground" Value="{StaticResource Text.Primary}"/>
 
         <Setter Property="Background" Value="{StaticResource GlassChrome.Idle.Fill}"/>
 
@@ -28,7 +34,7 @@
 
             <Setter.Value>
 
-                <ControlTemplate TargetType="{x:Type controls:GlassRoundButton}">
+                <ControlTemplate TargetType="{x:Type controls:GlassPillButton}">
 
                     <Grid x:Name="PART_Outer"
 
@@ -66,7 +72,7 @@
 
                                     Background="Transparent"
 
-                                    CornerRadius="999"
+                                    CornerRadius="{StaticResource Glass.Metrics.ChromeCapsuleRadius}"
 
                                     SnapsToDevicePixels="True"/>
 
@@ -88,7 +94,7 @@
 
                                 <Border x:Name="PART_ShadowHost"
 
-                                        CornerRadius="999"
+                                        CornerRadius="{StaticResource Glass.Metrics.ChromeCapsuleRadius}"
 
                                         Background="Transparent"
 
@@ -100,7 +106,7 @@
 
                                 <Border x:Name="PART_LensPlate"
 
-                                        CornerRadius="999"
+                                        CornerRadius="{StaticResource Glass.Metrics.ChromeCapsuleRadius}"
 
                                         ClipToBounds="True"
 
@@ -120,7 +126,7 @@
 
                                         BorderThickness="{TemplateBinding BorderThickness}"
 
-                                        CornerRadius="999"
+                                        CornerRadius="{StaticResource Glass.Metrics.ChromeCapsuleRadius}"
 
                                         Opacity="0.88"
 
@@ -130,7 +136,7 @@
 
                                 <Border x:Name="PART_FresnelRim"
 
-                                        CornerRadius="999"
+                                        CornerRadius="{StaticResource Glass.Metrics.ChromeCapsuleRadius}"
 
                                         Background="Transparent"
 
@@ -162,7 +168,7 @@
 
                                 <Border x:Name="PART_RimHighlight"
 
-                                        CornerRadius="999"
+                                        CornerRadius="{StaticResource Glass.Metrics.ChromeCapsuleRadius}"
 
                                         IsHitTestVisible="False"
 
@@ -186,13 +192,13 @@
 
                                 <Border x:Name="PART_TopSpecular"
 
-                                        CornerRadius="999"
+                                        CornerRadius="{StaticResource Glass.Metrics.ChromeCapsuleRadius}"
 
                                         VerticalAlignment="Top"
 
                                         Height="14"
 
-                                        Margin="2,1,2,0"
+                                        Margin="6,1,6,0"
 
                                         Opacity="0"
 
@@ -218,13 +224,13 @@
 
                                 <Border x:Name="PART_BottomSpecular"
 
-                                        CornerRadius="999"
+                                        CornerRadius="{StaticResource Glass.Metrics.ChromeCapsuleRadius}"
 
                                         VerticalAlignment="Bottom"
 
                                         Height="9"
 
-                                        Margin="4,0,4,2"
+                                        Margin="8,0,8,2"
 
                                         Opacity="0"
 
@@ -248,7 +254,7 @@
 
                                 <Border x:Name="PART_PressGlow"
 
-                                        CornerRadius="999"
+                                        CornerRadius="{StaticResource Glass.Metrics.ChromeCapsuleRadius}"
 
                                         IsHitTestVisible="False"
 
@@ -265,6 +271,8 @@
                                               HorizontalAlignment="Center"
 
                                               VerticalAlignment="Center"
+
+                                              Margin="{TemplateBinding Padding}"
 
                                               RecognizesAccessKey="True"
 

@@ -27,6 +27,23 @@ public partial class GlassPopupShell : UserControl
     private Rect? _cachedBackdropRect;
     private ImageSource? _cachedBackdropImage;
 
+    /// <summary>
+    /// Backdrop cache read for chrome controls (round/pill lens crop). Not global popup styling.
+    /// </summary>
+    internal bool TryGetChromeLensBackdrop(out ImageSource? source, out Rect deviceRect)
+    {
+        source = _cachedBackdropImage;
+        if (_cachedBackdropRect is { } rect && source != null && rect.Width >= 1 && rect.Height >= 1)
+        {
+            deviceRect = rect;
+            return true;
+        }
+
+        source = null;
+        deviceRect = default;
+        return false;
+    }
+
     public GlassPopupShell()
     {
         InitializeComponent();
@@ -64,7 +81,10 @@ public partial class GlassPopupShell : UserControl
     private void ApplyChromeStyle()
     {
         if (UseMenuChrome)
-            Chrome.SetResourceReference(StyleProperty, "GlassPopupMenuShell");
+        {
+            Chrome.SetResourceReference(StyleProperty, "GlassSortMenuShell");
+            SetMenuBackdropLowLight(true);
+        }
         else
         {
             Chrome.ClearValue(StyleProperty);
@@ -72,7 +92,19 @@ public partial class GlassPopupShell : UserControl
             Chrome.BorderThickness = new Thickness(0);
             Chrome.Padding = new Thickness(0);
             Chrome.Effect = null;
+            SetMenuBackdropLowLight(false);
         }
+    }
+
+    /// <summary>Sort menu uses port-list surface (blur + tint only), not popup rim/sheen stack.</summary>
+    private void SetMenuBackdropLowLight(bool lowLight)
+    {
+        var visibility = lowLight ? Visibility.Collapsed : Visibility.Visible;
+        InnerSheenLayer.Visibility = visibility;
+        RimLightLayer.Visibility = visibility;
+        TintLayer.Background = lowLight
+            ? (Brush)FindResource("Glass.List.Surface.Fill")!
+            : (Brush)FindResource("Glass.Tint")!;
     }
 
     /// <summary>
@@ -98,7 +130,9 @@ public partial class GlassPopupShell : UserControl
         }
 
         _cachedBackdropRect = rect;
-        _cachedBackdropImage = BackdropBlurHelper.CaptureBlurredRegion(rect, blurRadius: 32, dimOpacity: 0.06);
+        var blurRadius = UseMenuChrome ? 28 : 32;
+        var dimOpacity = UseMenuChrome ? 0.04 : 0.06;
+        _cachedBackdropImage = BackdropBlurHelper.CaptureBlurredRegion(rect, blurRadius: blurRadius, dimOpacity: dimOpacity);
         BackdropBrush.ImageSource = _cachedBackdropImage;
     }
 

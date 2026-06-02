@@ -37,3 +37,19 @@ Before development starts, verify that the planning artifacts required by `docs/
 ## Ownership Rule
 
 Do not start development without calling either `ralph` or `team`.
+
+## Error Track (WPF control templates)
+
+Observed failure pattern (GlassRoundButton liquid-glass hover, 2026-06-01):
+
+- `PART_Scale` / `PART_GelFollow` were named inside a single `TransformGroup`; `Template.FindName` often returned null, so `GlassRoundButtonInteractionAnimator` never attached and hover looked unchanged.
+- `Height="42%"` / `28%"` on template `Border` elements threw `XamlParseException` under some cultures (`LengthConverter` rejects `%` for `Border.Height`).
+- Pixel `ShaderEffect` on 32×32 lens was removed after freezes/black frames; delivery still claimed “glass” without running the harness.
+- Agents reported validation “failed” with exit `4294967295` while `PortCheck.exe` held file locks or the app fell through to Docker/tray init instead of the harness.
+
+Corrected future behavior:
+
+- one named transform per element (nested grids), not multiple named transforms inside `TransformGroup`.
+- use fixed dip heights in small round templates, not percentage lengths on `Border.Height`.
+- do not re-enable round-button pixel shaders without a harness case that proves no UI-thread hang.
+- after template or animator edits, run `--validate-glass-round-button` and read the `PASS` report before telling the user to retest UI.

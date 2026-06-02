@@ -53,13 +53,14 @@ What PortCheck ships today:
 | **Tint / sheen / rim** | Fixed brushes in `LiquidGlass.xaml`: `Glass.Tint`, `Glass.InnerSheen`, `Glass.RimLight` |
 | **Shell shadow** | `Glass.WindowShadow` on outer popup border |
 | **Text** | Fixed `Text.Primary` / `Text.Secondary` / `Text.Tertiary` + `Text.Shadow` effect |
-| **Motion** | `FluidAnimation.cs` (pane tabs); `GlassLiquidInteractionAnimator.cs` (`GlassRoundButton` hover/press) |
+| **Motion** | `FluidAnimation.cs` (pane tabs); `GlassRoundButtonInteractionAnimator.cs` (`GlassRoundButton` only) |
 
 ### Not implemented (do not claim in QA or screenshots)
 
 | Aspirational feature | Status |
 | --- | --- |
-| Real-time lensing / refraction | **No** — blur only |
+| Full-popup real-time lensing | **No** — shell uses capture blur + tint only |
+| Round chrome (`GlassRoundButton`) lensing | **Partial** — 32×32 hover backdrop crop + rim/specular (no runtime pixel shader); see [GlassRoundButton contract](#glassroundbutton--liquid-chrome-contract) |
 | Wallpaper-adaptive tint | **No** — static `Glass.Tint` |
 | Dynamic opacity scale by content depth | **No** — fixed brush alphas |
 | Adaptive text toning | **No** — fixed white palette |
@@ -149,7 +150,7 @@ All styles live in `src/PortCheck/Themes/LiquidGlass.xaml` unless noted.
 
 | Style | Target | Purpose | When to use |
 | --- | --- | --- | --- |
-| `GlassPopupMenuShell` | `Border` | Mini glass panel: tint stack + shadow | `GlassPopupShell`, sort menu host |
+| `GlassSortMenuShell` | `Border` | Sort menu: captured blur + `Glass.List.Surface` tint; single soft border; no rim/sheen/window shadow | `GlassPopupShell` when `UseMenuChrome` |
 | `GlassRoundButton` | `Controls.GlassRoundButton` (`Themes/GlassRoundButton.xaml`) | 32×32 liquid lens chrome — see [GlassRoundButton contract](#glassroundbutton--liquid-chrome-contract) | Sort/filter, Settings back |
 | `GlassScrollBar` | `ScrollBar` | Thin translucent thumb | Port list scrollers |
 
@@ -175,13 +176,13 @@ Also called **pane tabs** or **Smart Category chips** (not a separate `TabBar` c
 
 | Artifact | Name |
 | --- | --- |
-| XAML region | `TrayPopupWindow` Grid Row 1 `ScrollViewer` |
+| XAML region | `TrayPopupWindow` Grid Row 1 pane-tab host (`ClipToBounds=False`, same overflow model as chrome row) |
 | Buttons | `LocalPaneTabButton`, `DockerPaneTabButton` |
 | Styles | `GlassPaneTabBase` → `GlassPaneTabLocal`, `GlassPaneTabDocker` |
 | Tokens | `PaneTab.Idle.Fill`, `PaneTab.Active.Fill`, `PaneTab.Active.Stroke`, `PaneTab.Docker.Accent` |
 | Motion | `FluidAnimation.RunTabPush`, `PopIcon` |
 
-Hide entire tab `ScrollViewer` when `IsDockerSurfaceVisible` is false.
+Hide entire pane-tab row when `IsDockerSurfaceVisible` is false.
 
 ### Lists
 
@@ -213,7 +214,7 @@ Hide entire tab `ScrollViewer` when `IsDockerSurfaceVisible` is false.
 
 | Style | Purpose | When to use |
 | --- | --- | --- |
-| `GlassPopupMenuButton` | Menu row hover | Sort field/order items |
+| `GlassSortMenuItem` | `Hover.Surface` hover/selected; no item stroke (matches `GlassPortListItem`) | Sort field/order items |
 | `GlassDivider` | Menu separator | Sort menu groups |
 
 ### Settings layout
@@ -242,7 +243,7 @@ Hide entire tab `ScrollViewer` when `IsDockerSurfaceVisible` is false.
 | **DockerPortRowControl** | `DockerPortRowControl.xaml` | Docker catalog row + container kill | Docker `ListBox` item template |
 | **ExcludedPortRowControl** | `ExcludedPortRowControl.xaml` | Excluded port + remove | Settings port list |
 | **SettingsIconBadge** | `SettingsIconBadge.xaml` | 22×22 gradient square + glyph | Settings section headers (Filter Ports, Scan Interval) |
-| **GlassRoundButton** | `GlassRoundButton.cs` + theme | 32×32 liquid lens chrome + `GlassLiquidInteractionAnimator` | Sort, Settings back |
+| **GlassRoundButton** | `GlassRoundButton.cs` + `GlassRoundButton.xaml` | 32×32 liquid lens chrome (isolated module) | Sort, Settings back |
 
 ### Theme assets
 
@@ -263,7 +264,7 @@ Invoked from `TrayPopupWindow.xaml.cs` on pane tab click and pane changes.
 | `SetPaneTabWidths` | Snap widths without animation | Local expanded **106**, Docker **118**, collapsed **32** |
 | `RunPaneCrossfade` | Outgoing list opacity 1→0; incoming 0→1 + X **14→0** | Fade **220ms** (`QuadraticEase`); slide uses `SpringEase` |
 | `PopIcon` | Scale **1 → 1.12 → 1** on tab tap | **280ms** total |
-| `GlassLiquidInteractionAnimator` | Round chrome: scale **→1.11**, **inward pinch** (~9.5%), gel follow **+dx/+dy** (~3.2px); press **→0.96** + under-finger glow only | Enter **220ms** spring; leave **380ms**; honors reduce-motion |
+| `GlassRoundButtonInteractionAnimator` | Round chrome only: scale **→1.14**, **inward pinch** (~9.5%), gel follow **+dx/+dy** (~3.2px); press **→0.96** + under-finger glow | Enter **220ms** spring; leave **380ms**; honors reduce-motion |
 
 ### Micro-interaction rules
 
@@ -272,7 +273,7 @@ Invoked from `TrayPopupWindow.xaml.cs` on pane tab click and pane changes.
 | Tap pane tab | `PopIcon` on button; `RunTabPush` if pane changes |
 | Switch pane | `RunPaneCrossfade` between `LocalPortsList` / `DockerPortsList` |
 | First show | `SetPaneTabWidths` only (no crossfade) |
-| Hover round chrome (`GlassRoundButton`) | Enlarge + inward collapse toward cursor; translucent fill; bowl vignette follows cursor; press glow only while pressed |
+| Hover round chrome (`GlassRoundButton`) | Enlarge + inward pinch + gel follow; lens plate (backdrop crop); fresnel rim + top/bottom specular; press glow only while pressed |
 
 **Not specified here:** label opacity animation on tab activate (labels appear via XAML triggers).
 
@@ -280,17 +281,37 @@ Invoked from `TrayPopupWindow.xaml.cs` on pane tab click and pane changes.
 
 ## GlassRoundButton — liquid chrome contract
 
-Canonical implementation: `Controls/GlassRoundButton.cs`, `Themes/GlassRoundButton.xaml`, `Helpers/GlassLiquidInteractionAnimator.cs`.
+### Ownership boundary (do not mix with global liquid glass)
 
-### Product intent (Apple liquid-glass feel, WPF tier-A motion)
+| Owned by `GlassRoundButton` | Global liquid glass (`LiquidGlass.xaml`, other controls) |
+| --- | --- |
+| `Controls/GlassRoundButton.cs` | `GlassPopupShell` menu chrome, tint/sheen, popup blur |
+| `Themes/GlassRoundButton.xaml` (`GlassRound.*` brushes, template `PART_*`) | Pane tabs, rows, search capsule, dividers |
+| `Controls/GlassRoundButtonInteractionAnimator.cs` | `FluidAnimation.cs` (pane crossfade / tab push) |
+| `Helpers/GlassRoundLensBackdrop.cs` | `BackdropBlurHelper` (shared capture primitive only) |
+| `Effects/GlassRoundLensEffect.cs` + `Shaders/GlassRoundLensEffect.ps` (not loaded at runtime) | — |
+| `Validation/GlassRoundButtonHarness.cs`, `App` `--validate-glass-round-button` | — |
+
+**Integration only (not round-button styling):**
+
+- `GlassPopupShell.TryGetRoundButtonLensBackdrop` — internal cache read for lens crop.
+- Host row in `TrayPopupWindow.xaml` sets `ClipToBounds="False"` so `PART_Outer` scale can overflow 32×32.
+
+Copy this module when adding liquid glass to another control: duplicate the control + theme + animator pattern; do not extend `LiquidGlass.xaml` round-button `PART_*` names globally.
+
+Canonical implementation: `Controls/GlassRoundButton.cs`, `Themes/GlassRoundButton.xaml`, `Controls/GlassRoundButtonInteractionAnimator.cs`.
+
+### Product intent (WPF tier-A motion)
 
 | Channel | Behavior |
 | --- | --- |
-| **Translucency** | Hover fill `#06FFFFFF`; body opacity **~0.70** on hover (clearer than idle opaque frost) |
-| **Enlarge** | Uniform envelope **×1.11** spring on enter |
-| **Inward collapse** | Scale uses `(1 - pinch×axis)` — **never** `(1 + stretch)`; pinch up to **~9.5%** toward cursor side as pointer moves off center |
-| **Gel follow** | `PART_GelFollow` translates **+dx/+dy** (~**3.2px** max) so motion matches pointer (not inverted) |
-| **Press** | Brief **×0.96**; radial glow under finger; no hover specular wedge |
+| **Translucency** | Idle frost `PART_Bd` ~0.88 opacity; hover fill near-clear, `PART_Bd` ~0.05 |
+| **Enlarge** | `PART_Outer` / `PART_Scale` uniform **×1.14** spring on enter |
+| **Inward collapse** | `PART_InnerPinch` up to **~9.5%** toward cursor (never outward stretch) |
+| **Gel follow** | `PART_GelFollow` on `PART_Root` — **+dx/+dy** (~**3.2px** max) |
+| **Press** | Brief **×0.96** on outer scale; `PART_PressGlow` under finger only while pressed |
+| **Inner lens** | `PART_LensPlate`: crop popup shell cache or screen capture; light `BlurEffect` (~0.6). Pixel shader **off** at runtime (hang risk on 32×32). |
+| **Rim / specular** | `PART_FresnelRim`, `PART_TopSpecular`, `PART_BottomSpecular`, `PART_RimHighlight` fade in on hover |
 | **Reduce motion** | When `SystemParameters.ClientAreaAnimation` is false, snap values without lerp |
 
 ### Template layering (bottom → top)
@@ -300,14 +321,14 @@ WPF **bitmap effects on a parent blur all descendants**. Glass and icon must sta
 | Part | Hit-test | Role |
 | --- | --- | --- |
 | `PART_HitTarget` | **Yes** (transparent full circle) | Defines **entire 32×32** hover/click area |
+| `PART_Outer` / `PART_Scale` | No | Hover enlarge (outer grid; one transform per element for `FindName`) |
+| `PART_Root` / `PART_GelFollow` | No | Gel translation with glass stack |
 | `PART_ShadowHost` | No | `DropShadowEffect` only here |
-| `PART_Bd` | No | Translucent fill + rim stroke |
-| `PART_CollapseVignette` | No | Inward bowl (radial, follows cursor) |
-| `PART_RimHighlight` | No | Static top sheen (opacity only; do not rotate gradient with cursor — causes white wedge) |
-| `PART_PressGlow` | No | Press-only energize at cursor |
-| `PART_Icon` (`ContentPresenter`) | **No** | Glyph stays **sharp** — no `Text.Shadow`, no effect on ancestors |
-
-`PART_Scale` + `PART_GelFollow` apply to `PART_Root` so glass and icon move together.
+| `PART_LensPlate` | No | Backdrop crop on hover; no effect on icon parent |
+| `PART_Bd` | No | Idle frost fill + rim; fades on hover |
+| `PART_FresnelRim` / speculars | No | Hover glass read |
+| `PART_PressGlow` | No | Press-only |
+| `PART_Icon` (`ContentPresenter`) | **No** | Sharp glyph — no `Text.Shadow`, no effect on ancestors |
 
 ### Icon clarity rules (mandatory)
 
@@ -395,7 +416,7 @@ TrayPopupWindow
 | App merge | `src/PortCheck/App.xaml` |
 | Main popup layout | `src/PortCheck/TrayPopupWindow.xaml` |
 | Motion | `src/PortCheck/Helpers/FluidAnimation.cs` |
-| Round chrome motion | `src/PortCheck/Helpers/GlassLiquidInteractionAnimator.cs` |
+| Round chrome motion | `src/PortCheck/Controls/GlassRoundButtonInteractionAnimator.cs` |
 | Round chrome control | `src/PortCheck/Controls/GlassRoundButton.cs`, `Themes/GlassRoundButton.xaml` |
 | Backdrop capture | `src/PortCheck/Helpers/BackdropBlurHelper.cs` |
 | Product behavior | `docs/spec/portcheck.md` |

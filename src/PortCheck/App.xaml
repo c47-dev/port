@@ -6,7 +6,10 @@
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="Themes/LiquidGlass.xaml"/>
+                <ResourceDictionary Source="Themes/GlassChrome.xaml"/>
                 <ResourceDictionary Source="Themes/GlassRoundButton.xaml"/>
+                <ResourceDictionary Source="Themes/GlassPillButton.xaml"/>
+                <ResourceDictionary Source="Themes/GlassPaneTabButton.xaml"/>
                 <ResourceDictionary Source="Themes/DockerIcon.xaml"/>
             </ResourceDictionary.MergedDictionaries>
             <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter"/>

@@ -1,73 +1,151 @@
 using System.Windows;
+
 using System.Windows.Controls;
+
 using System.Windows.Media;
+
+
+
 namespace PortCheck.Controls;
 
+
+
 /// <summary>
-/// 32×32 liquid-glass lens: hover refracts popup backdrop; outer scale/gel motion unchanged.
+
+/// Pane tab chip (Local / Docker). Liquid chrome is hover-only overlay; idle/active visuals unchanged.
+
 /// </summary>
-public class GlassRoundButton : Button
+
+public class GlassPaneTabButton : Button
+
 {
+
     private const string PartRoot = "PART_Root";
+
     private const string PartScale = "PART_Scale";
+
     private const string PartGelFollow = "PART_GelFollow";
+
     private const string PartInnerPinch = "PART_InnerPinch";
+
     private const string PartShadowHost = "PART_ShadowHost";
+
     private const string PartLensPlate = "PART_LensPlate";
+
     private const string PartBd = "PART_Bd";
+
     private const string PartFresnelRim = "PART_FresnelRim";
+
     private const string PartRimHighlight = "PART_RimHighlight";
+
     private const string PartTopSpecular = "PART_TopSpecular";
+
     private const string PartBottomSpecular = "PART_BottomSpecular";
+
     private const string PartPressGlow = "PART_PressGlow";
+
+
 
     private GlassChromeInteractionAnimator? _animator;
 
-    static GlassRoundButton()
+
+
+    static GlassPaneTabButton()
+
     {
+
         DefaultStyleKeyProperty.OverrideMetadata(
-            typeof(GlassRoundButton),
-            new FrameworkPropertyMetadata(typeof(GlassRoundButton)));
+
+            typeof(GlassPaneTabButton),
+
+            new FrameworkPropertyMetadata(typeof(GlassPaneTabButton)));
+
     }
+
+
 
     public override void OnApplyTemplate()
+
     {
+
         base.OnApplyTemplate();
+
         _animator?.Detach();
 
+
+
         if (FindPart(PartRoot) is not FrameworkElement root
+
             || FindPart(PartScale) is not ScaleTransform scale
+
             || FindPart(PartGelFollow) is not TranslateTransform gelFollow
+
             || FindPart(PartInnerPinch) is not ScaleTransform innerPinch
+
             || FindPart(PartShadowHost) is not Border shadowHost
+
             || FindPart(PartLensPlate) is not Border lensPlate
+
             || FindPart(PartBd) is not Border bd
+
             || FindPart(PartFresnelRim) is not Border fresnelRim
+
             || FindPart(PartRimHighlight) is not Border rimHighlight
+
             || FindPart(PartTopSpecular) is not Border topSpecular
+
             || FindPart(PartBottomSpecular) is not Border bottomSpecular
+
             || FindPart(PartPressGlow) is not Border pressGlow)
+
         {
+
             _animator = null;
+
             return;
+
         }
 
+
+
         _animator = new GlassChromeInteractionAnimator(
+
             this,
+
             root,
+
             shadowHost,
+
             scale,
+
             gelFollow,
+
             innerPinch,
+
             lensPlate,
+
             bd,
+
             fresnelRim,
+
             rimHighlight,
+
             topSpecular,
+
             bottomSpecular,
-            pressGlow);
+
+            pressGlow,
+
+            GlassChromeInteractionOptions.PaneTab);
+
         _animator.Attach();
+
     }
 
+
+
     private object? FindPart(string name) => Template?.FindName(name, this);
+
 }
+
+

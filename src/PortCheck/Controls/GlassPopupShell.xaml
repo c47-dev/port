@@ -17,11 +17,14 @@
                         <ImageBrush x:Name="BackdropBrush" Stretch="UniformToFill"/>
                     </Border.Background>
                 </Border>
-                <Border CornerRadius="{Binding ShellCornerRadius, ElementName=Root}"
+                <Border x:Name="TintLayer"
+                        CornerRadius="{Binding ShellCornerRadius, ElementName=Root}"
                         Background="{StaticResource Glass.Tint}"/>
-                <Border CornerRadius="{Binding ShellCornerRadius, ElementName=Root}"
+                <Border x:Name="InnerSheenLayer"
+                        CornerRadius="{Binding ShellCornerRadius, ElementName=Root}"
                         Background="{StaticResource Glass.InnerSheen}"/>
-                <Border CornerRadius="{Binding ShellCornerRadius, ElementName=Root}"
+                <Border x:Name="RimLightLayer"
+                        CornerRadius="{Binding ShellCornerRadius, ElementName=Root}"
                         BorderBrush="{StaticResource Glass.RimLight}"
                         BorderThickness="1"
                         Background="Transparent"/>

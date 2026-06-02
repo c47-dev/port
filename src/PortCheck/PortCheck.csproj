@@ -28,6 +28,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Resource Include="Shaders\GlassRoundLensEffect.ps" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Update="appsettings.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>

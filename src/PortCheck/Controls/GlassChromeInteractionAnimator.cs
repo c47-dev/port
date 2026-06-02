@@ -4,46 +4,46 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Effects;
+using System.Windows.Threading;
+using PortCheck.Helpers;
 
-namespace PortCheck.Helpers;
+namespace PortCheck.Controls;
 
 /// <summary>
-/// Liquid-glass round chrome (refined from approved direction):
-/// translucent lens, hover enlarge, inward pinch under cursor, gel follows pointer (+dx/+dy).
-/// No outward stretch, no hover specular wedge.
+/// Shared hover/press liquid-glass motion for <see cref="GlassRoundButton"/> and <see cref="GlassPillButton"/>.
 /// </summary>
-public sealed class GlassLiquidInteractionAnimator
+public sealed class GlassChromeInteractionAnimator
 {
-    /// <summary>Approved ~1.14, refined.</summary>
-    public const double HoverEnterScale = 1.11;
     public const double PressScale = 0.96;
-    /// <summary>Approved ~12%, refined — scale decreases toward cursor (inward collapse).</summary>
-    public const double MaxInwardPinch = 0.095;
-    /// <summary>Approved ~5.5px, refined — gel follows cursor, not inverted.</summary>
-    public const double GelFollowPixels = 3.2;
     public const double DeformSmoothing = 0.38;
 
     public static readonly TimeSpan HoverEnterDuration = TimeSpan.FromMilliseconds(220);
+    public static readonly TimeSpan LensFadeDuration = TimeSpan.FromMilliseconds(160);
     public static readonly TimeSpan HoverLeaveDuration = FluidAnimation.TabPushDuration;
     public static readonly TimeSpan PressInDuration = TimeSpan.FromMilliseconds(100);
     public static readonly TimeSpan PressGlowDuration = TimeSpan.FromMilliseconds(80);
 
-    private static readonly SolidColorBrush HoverFill = CreateFrozenBrush(0x06, 0xFF, 0xFF, 0xFF);
-    private static readonly SolidColorBrush IdleFill = CreateFrozenBrush(0x14, 0xFF, 0xFF, 0xFF);
-    private static readonly SolidColorBrush PressFill = CreateFrozenBrush(0x12, 0xFF, 0xFF, 0xFF);
-    private static readonly SolidColorBrush HoverStroke = CreateFrozenBrush(0xA0, 0xFF, 0xFF, 0xFF);
+    private static readonly SolidColorBrush HoverFill = CreateFrozenBrush(0x00, 0xFF, 0xFF, 0xFF);
+    private static readonly SolidColorBrush IdleFill = CreateFrozenBrush(0x18, 0xFF, 0xFF, 0xFF);
+    private static readonly SolidColorBrush PressFill = CreateFrozenBrush(0x10, 0xFF, 0xFF, 0xFF);
+    private static readonly SolidColorBrush HoverStroke = CreateFrozenBrush(0xD8, 0xFF, 0xFF, 0xFF);
     private static readonly SolidColorBrush IdleStroke = CreateFrozenBrush(0x55, 0xFF, 0xFF, 0xFF);
-    private static readonly SolidColorBrush ActiveStroke = CreateFrozenBrush(0xC0, 0xFF, 0xFF, 0xFF);
+    private static readonly SolidColorBrush ActiveStroke = CreateFrozenBrush(0xFF, 0xFF, 0xFF, 0xFF);
 
     private readonly UIElement _host;
     private readonly FrameworkElement _root;
     private readonly Border _shadowHost;
     private readonly ScaleTransform _scale;
     private readonly TranslateTransform _gelFollow;
+    private readonly ScaleTransform _innerPinch;
+    private readonly Border _lensPlate;
     private readonly Border _bd;
-    private readonly Border _collapseVignette;
+    private readonly Border _fresnelRim;
     private readonly Border _rimHighlight;
+    private readonly Border _topSpecular;
+    private readonly Border _bottomSpecular;
     private readonly Border _pressGlow;
+    private ImageBrush? _lensBrush;
 
     private bool _pointerInside;
     private bool _pressed;
@@ -51,27 +51,40 @@ public sealed class GlassLiquidInteractionAnimator
     private double _scaleY = 1;
     private double _gelX;
     private double _gelY;
+    private readonly GlassChromeInteractionOptions _options;
 
-    public GlassLiquidInteractionAnimator(
+    public const double HoverEnterScale = 1.14;
+
+    public GlassChromeInteractionAnimator(
         UIElement host,
         FrameworkElement root,
         Border shadowHost,
         ScaleTransform scale,
         TranslateTransform gelFollow,
+        ScaleTransform innerPinch,
+        Border lensPlate,
         Border bd,
-        Border collapseVignette,
+        Border fresnelRim,
         Border rimHighlight,
-        Border pressGlow)
+        Border topSpecular,
+        Border bottomSpecular,
+        Border pressGlow,
+        GlassChromeInteractionOptions? options = null)
     {
         _host = host;
         _root = root;
         _shadowHost = shadowHost;
         _scale = scale;
         _gelFollow = gelFollow;
+        _innerPinch = innerPinch;
+        _lensPlate = lensPlate;
         _bd = bd;
-        _collapseVignette = collapseVignette;
+        _fresnelRim = fresnelRim;
         _rimHighlight = rimHighlight;
+        _topSpecular = topSpecular;
+        _bottomSpecular = bottomSpecular;
         _pressGlow = pressGlow;
+        _options = options ?? GlassChromeInteractionOptions.Standard;
     }
 
     public static bool MotionEnabled => SystemParameters.ClientAreaAnimation;
@@ -79,7 +92,17 @@ public sealed class GlassLiquidInteractionAnimator
     public void Attach()
     {
         Detach();
-        ApplyIdleShadow();
+        if (_options.HoverOverlayOnly)
+        {
+            _bd.Opacity = 0;
+            _bd.Background = Brushes.Transparent;
+            _shadowHost.Effect = null;
+        }
+        else
+        {
+            ApplyIdleShadow();
+        }
+
         _host.MouseEnter += OnMouseEnter;
         _host.MouseLeave += OnMouseLeave;
         _host.MouseMove += OnMouseMove;
@@ -97,11 +120,15 @@ public sealed class GlassLiquidInteractionAnimator
         _scale.BeginAnimation(ScaleTransform.ScaleXProperty, null);
         _scale.BeginAnimation(ScaleTransform.ScaleYProperty, null);
         _rimHighlight.BeginAnimation(UIElement.OpacityProperty, null);
+        _fresnelRim.BeginAnimation(UIElement.OpacityProperty, null);
+        _topSpecular.BeginAnimation(UIElement.OpacityProperty, null);
+        _bottomSpecular.BeginAnimation(UIElement.OpacityProperty, null);
         _pressGlow.BeginAnimation(UIElement.OpacityProperty, null);
-        _collapseVignette.BeginAnimation(UIElement.OpacityProperty, null);
         _bd.BeginAnimation(UIElement.OpacityProperty, null);
+        _lensPlate.BeginAnimation(UIElement.OpacityProperty, null);
         _gelFollow.BeginAnimation(TranslateTransform.XProperty, null);
         _gelFollow.BeginAnimation(TranslateTransform.YProperty, null);
+        ClearLensBackdrop();
     }
 
     private void OnMouseEnter(object sender, MouseEventArgs e)
@@ -111,18 +138,16 @@ public sealed class GlassLiquidInteractionAnimator
 
         if (!MotionEnabled)
         {
-            ApplyScale(HoverEnterScale, HoverEnterScale);
-            SetHoverLayerOpacities();
+            ApplyScale(_options.HoverEnterScale, _options.HoverEnterScale);
             ApplyHoverShadow();
+            EnterLiquidGlassLook();
             UpdateInwardDeform(e);
             return;
         }
 
-        AnimateScale(HoverEnterScale, HoverEnterScale, HoverEnterDuration, FluidAnimation.SpringEase);
-        AnimateOpacity(_rimHighlight, 0.50, HoverEnterDuration);
-        AnimateOpacity(_collapseVignette, 0.44, HoverEnterDuration);
-        AnimateOpacity(_bd, 0.70, HoverEnterDuration);
+        AnimateScale(_options.HoverEnterScale, _options.HoverEnterScale, HoverEnterDuration, FluidAnimation.SpringEase);
         ApplyHoverShadow();
+        EnterLiquidGlassLook();
         UpdateInwardDeform(e);
     }
 
@@ -139,10 +164,10 @@ public sealed class GlassLiquidInteractionAnimator
         }
 
         AnimateScale(1, 1, HoverLeaveDuration, FluidAnimation.SpringEase);
-        AnimateOpacity(_rimHighlight, 0, HoverLeaveDuration);
-        AnimateOpacity(_collapseVignette, 0, HoverLeaveDuration);
+        _innerPinch.ScaleX = 1;
+        _innerPinch.ScaleY = 1;
+        ExitLiquidGlassLook();
         AnimateOpacity(_pressGlow, 0, PressGlowDuration);
-        AnimateOpacity(_bd, 0.88, HoverLeaveDuration);
         _gelFollow.BeginAnimation(TranslateTransform.XProperty, new DoubleAnimation(_gelFollow.X, 0, HoverLeaveDuration)
         {
             EasingFunction = FluidAnimation.SpringEase
@@ -151,7 +176,10 @@ public sealed class GlassLiquidInteractionAnimator
         {
             EasingFunction = FluidAnimation.SpringEase
         });
-        ApplyIdleShadow();
+        if (!_options.HoverOverlayOnly)
+            ApplyIdleShadow();
+        else
+            _shadowHost.Effect = null;
     }
 
     private void OnMouseMove(object sender, MouseEventArgs e)
@@ -165,24 +193,25 @@ public sealed class GlassLiquidInteractionAnimator
     private void OnPreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
         _pressed = true;
-        _bd.Background = PressFill;
-        _bd.BorderBrush = ActiveStroke;
+        if (!_options.HoverOverlayOnly)
+        {
+            _bd.Background = PressFill;
+            _bd.BorderBrush = ActiveStroke;
+        }
 
         var (dx, dy) = GetNormalizedPointer(e);
         _pressGlow.Background = CreatePressGlowBrush(dx, dy);
 
         if (!MotionEnabled)
         {
-            ApplyScale(PressScale, PressScale);
             _pressGlow.Opacity = 0.62;
-            _collapseVignette.Opacity = 0.52;
             UpdateInwardDeform(e, extraPinch: 0.022);
             return;
         }
 
         AnimateOpacity(_pressGlow, 0.65, PressGlowDuration);
-        AnimateOpacity(_collapseVignette, 0.52, PressGlowDuration);
-        AnimateScale(PressScale, PressScale, PressInDuration, new QuadraticEase { EasingMode = EasingMode.EaseOut });
+        if (!_options.HoverOverlayOnly)
+            AnimateScale(_options.PressScale, _options.PressScale, PressInDuration, new QuadraticEase { EasingMode = EasingMode.EaseOut });
         UpdateInwardDeform(e, extraPinch: 0.022);
     }
 
@@ -192,8 +221,11 @@ public sealed class GlassLiquidInteractionAnimator
         if (!_pointerInside)
             return;
 
-        _bd.Background = HoverFill;
-        _bd.BorderBrush = HoverStroke;
+        if (!_options.HoverOverlayOnly)
+        {
+            _bd.Background = HoverFill;
+            _bd.BorderBrush = HoverStroke;
+        }
 
         if (!MotionEnabled)
         {
@@ -203,59 +235,169 @@ public sealed class GlassLiquidInteractionAnimator
         }
 
         AnimateOpacity(_pressGlow, 0, PressGlowDuration);
-        AnimateOpacity(_collapseVignette, 0.44, PressGlowDuration);
+        if (!_options.HoverOverlayOnly)
+            AnimateScale(_options.HoverEnterScale, _options.HoverEnterScale, PressInDuration, FluidAnimation.SpringEase);
         UpdateInwardDeform(e);
     }
 
-    /// <summary>
-    /// Envelope grows; axes under cursor pinch inward (1 - pinch), never (1 + stretch).
-    /// Gel translation uses +dx/+dy so motion matches pointer.
-    /// </summary>
     private void UpdateInwardDeform(MouseEventArgs e, double extraPinch = 0)
     {
+        if (_options.MaxInwardPinch <= 0 && _options.GelFollowPixels <= 0)
+            return;
+
         var (dx, dy) = GetNormalizedPointer(e);
         var dist = Math.Min(1, Math.Sqrt(dx * dx + dy * dy));
-        var pinch = (MaxInwardPinch + extraPinch) * (0.4 + 0.6 * dist);
+        var pinch = (_options.MaxInwardPinch + extraPinch) * (0.4 + 0.6 * dist);
 
         var axisX = 0.25 + 0.75 * Math.Abs(dx);
         var axisY = 0.25 + 0.75 * Math.Abs(dy);
-        var targetX = HoverEnterScale * (1 - pinch * axisX);
-        var targetY = HoverEnterScale * (1 - pinch * axisY);
+        var innerX = 1 - pinch * axisX;
+        var innerY = 1 - pinch * axisY;
 
-        if (_pressed)
-        {
-            targetX = PressScale;
-            targetY = PressScale;
-        }
+        var targetGelX = dx * _options.GelFollowPixels;
+        var targetGelY = dy * _options.GelFollowPixels;
 
-        var targetGelX = dx * GelFollowPixels;
-        var targetGelY = dy * GelFollowPixels;
-
-        _scale.BeginAnimation(ScaleTransform.ScaleXProperty, null);
-        _scale.BeginAnimation(ScaleTransform.ScaleYProperty, null);
         _gelFollow.BeginAnimation(TranslateTransform.XProperty, null);
         _gelFollow.BeginAnimation(TranslateTransform.YProperty, null);
 
         if (!MotionEnabled)
         {
-            ApplyScale(targetX, targetY);
+            if (_pressed)
+                ApplyScale(_options.PressScale, _options.PressScale);
+            _innerPinch.ScaleX = innerX;
+            _innerPinch.ScaleY = innerY;
             _gelFollow.X = targetGelX;
             _gelFollow.Y = targetGelY;
-            ApplyLensVisuals(dx, dy);
             return;
         }
 
-        _scaleX += (targetX - _scaleX) * DeformSmoothing;
-        _scaleY += (targetY - _scaleY) * DeformSmoothing;
-        _scale.ScaleX = _scaleX;
-        _scale.ScaleY = _scaleY;
+        var smoothInner = 0.42;
+        _innerPinch.ScaleX += (innerX - _innerPinch.ScaleX) * smoothInner;
+        _innerPinch.ScaleY += (innerY - _innerPinch.ScaleY) * smoothInner;
 
         _gelX += (targetGelX - _gelX) * DeformSmoothing;
         _gelY += (targetGelY - _gelY) * DeformSmoothing;
         _gelFollow.X = _gelX;
         _gelFollow.Y = _gelY;
+    }
 
-        ApplyLensVisuals(dx, dy);
+    private void EnterLiquidGlassLook()
+    {
+        if (_options.EnableLensPlate)
+            ActivateLensBackdrop();
+
+        if (!MotionEnabled)
+        {
+            if (_options.EnableLensPlate)
+                _lensPlate.Opacity = _options.HoverLensPlateOpacity;
+            if (_options.EnableFresnelRim)
+                _fresnelRim.Opacity = _options.HoverFresnelOpacity;
+            _rimHighlight.Opacity = _options.HoverRimHighlightOpacity;
+            _topSpecular.Opacity = _options.HoverTopSpecularOpacity;
+            _bottomSpecular.Opacity = _options.HoverBottomSpecularOpacity;
+            if (!_options.HoverOverlayOnly)
+            {
+                _bd.Opacity = 0.05;
+                _bd.BorderThickness = new Thickness(0);
+            }
+
+            return;
+        }
+
+        if (_options.EnableLensPlate)
+            AnimateOpacity(_lensPlate, _options.HoverLensPlateOpacity, LensFadeDuration);
+        if (_options.EnableFresnelRim)
+            AnimateOpacity(_fresnelRim, _options.HoverFresnelOpacity, LensFadeDuration);
+        AnimateOpacity(_rimHighlight, _options.HoverRimHighlightOpacity, LensFadeDuration);
+        AnimateOpacity(_topSpecular, _options.HoverTopSpecularOpacity, LensFadeDuration);
+        AnimateOpacity(_bottomSpecular, _options.HoverBottomSpecularOpacity, LensFadeDuration);
+        if (_options.HoverOverlayOnly)
+            return;
+
+        AnimateOpacity(_bd, 0.05, LensFadeDuration);
+        _bd.BorderThickness = new Thickness(0);
+    }
+
+    private void ExitLiquidGlassLook()
+    {
+        if (!MotionEnabled)
+        {
+            _lensPlate.Opacity = 0;
+            _fresnelRim.Opacity = 0;
+            _rimHighlight.Opacity = 0;
+            _topSpecular.Opacity = 0;
+            _bottomSpecular.Opacity = 0;
+            if (!_options.HoverOverlayOnly)
+            {
+                _bd.Opacity = 0.88;
+                _bd.BorderThickness = new Thickness(1);
+            }
+
+            ClearLensBackdrop();
+            return;
+        }
+
+        if (_options.EnableLensPlate)
+            AnimateOpacity(_lensPlate, 0, LensFadeDuration);
+        if (_options.EnableFresnelRim)
+            AnimateOpacity(_fresnelRim, 0, LensFadeDuration);
+        AnimateOpacity(_rimHighlight, 0, LensFadeDuration);
+        AnimateOpacity(_topSpecular, 0, LensFadeDuration);
+        AnimateOpacity(_bottomSpecular, 0, LensFadeDuration);
+        if (_options.HoverOverlayOnly)
+        {
+            ScheduleClearLensBackdrop();
+            return;
+        }
+
+        AnimateOpacity(_bd, 0.88, LensFadeDuration);
+        _bd.BorderThickness = new Thickness(1);
+        ScheduleClearLensBackdrop();
+    }
+
+    private void ActivateLensBackdrop()
+    {
+        _lensPlate.Background = new SolidColorBrush(Color.FromArgb(0x28, 0xFF, 0xFF, 0xFF));
+        _lensPlate.Effect = null;
+
+        if (_options.UseBackdropLens)
+        {
+            _root.Dispatcher.BeginInvoke(
+                LoadLensBackdropAsync,
+                DispatcherPriority.Background);
+        }
+    }
+
+    private void LoadLensBackdropAsync()
+    {
+        if (!_pointerInside || !_options.UseBackdropLens)
+            return;
+
+        var shell = FindAncestor<GlassPopupShell>(_root);
+        if (shell != null && !shell.TryGetChromeLensBackdrop(out _, out _))
+            shell.RefreshBackdrop();
+
+        _lensBrush = GlassChromeLensBackdrop.TryCreateBrush(_root);
+        if (_lensBrush == null || !_pointerInside)
+            return;
+
+        _lensPlate.Background = _lensBrush;
+        _lensPlate.Effect = new BlurEffect { Radius = 0.6, RenderingBias = RenderingBias.Performance };
+    }
+
+    private void ScheduleClearLensBackdrop()
+    {
+        _root.Dispatcher.BeginInvoke(
+            ClearLensBackdrop,
+            DispatcherPriority.Background,
+            LensFadeDuration + TimeSpan.FromMilliseconds(20));
+    }
+
+    private void ClearLensBackdrop()
+    {
+        _lensBrush = null;
+        _lensPlate.Background = null;
+        _lensPlate.Effect = null;
     }
 
     private (double dx, double dy) GetNormalizedPointer(MouseEventArgs e)
@@ -271,13 +413,11 @@ public sealed class GlassLiquidInteractionAnimator
         return (dx, dy);
     }
 
-    private void ApplyLensVisuals(double dx, double dy)
-    {
-        _collapseVignette.Background = CreateCollapseVignetteBrush(dx, dy);
-    }
-
     private void ApplyGlassHoverVisual(bool hover)
     {
+        if (_options.HoverOverlayOnly)
+            return;
+
         if (hover)
         {
             _bd.Background = HoverFill;
@@ -289,26 +429,21 @@ public sealed class GlassLiquidInteractionAnimator
         _bd.BorderBrush = IdleStroke;
     }
 
-    private void SetHoverLayerOpacities()
-    {
-        _rimHighlight.Opacity = 0.50;
-        _collapseVignette.Opacity = 0.44;
-        _bd.Opacity = 0.70;
-        _pressGlow.Opacity = 0;
-    }
-
     private void ResetVisualState()
     {
         ApplyScale(1, 1);
-        _rimHighlight.Opacity = 0;
-        _collapseVignette.Opacity = 0;
+        _innerPinch.ScaleX = 1;
+        _innerPinch.ScaleY = 1;
         _pressGlow.Opacity = 0;
-        _bd.Opacity = 0.88;
+        ExitLiquidGlassLook();
         _gelFollow.X = 0;
         _gelFollow.Y = 0;
         _gelX = 0;
         _gelY = 0;
-        ApplyIdleShadow();
+        if (_options.HoverOverlayOnly)
+            _shadowHost.Effect = null;
+        else
+            ApplyIdleShadow();
     }
 
     private void AnimateScale(double toX, double toY, TimeSpan duration, IEasingFunction? easing = null)
@@ -344,10 +479,10 @@ public sealed class GlassLiquidInteractionAnimator
     private void ApplyHoverShadow() =>
         _shadowHost.Effect = new DropShadowEffect
         {
-            Color = Color.FromArgb(0x30, 0xFF, 0xFF, 0xFF),
-            BlurRadius = 14,
+            Color = Color.FromArgb(0x50, 0xFF, 0xFF, 0xFF),
+            BlurRadius = 18,
             ShadowDepth = 0,
-            Opacity = 0.32
+            Opacity = _options.HoverShadowOpacity
         };
 
     private void ApplyIdleShadow() =>
@@ -358,23 +493,6 @@ public sealed class GlassLiquidInteractionAnimator
             ShadowDepth = 0,
             Opacity = 0.28
         };
-
-    private static RadialGradientBrush CreateCollapseVignetteBrush(double dx, double dy)
-    {
-        var center = new Point(0.5 + dx * 0.16, 0.5 + dy * 0.16);
-        var brush = new RadialGradientBrush
-        {
-            GradientOrigin = center,
-            Center = center,
-            RadiusX = 0.72,
-            RadiusY = 0.72
-        };
-        brush.GradientStops.Add(new GradientStop(Color.FromArgb(0x00, 0, 0, 0), 0));
-        brush.GradientStops.Add(new GradientStop(Color.FromArgb(0x58, 0, 0, 0), 0.60));
-        brush.GradientStops.Add(new GradientStop(Color.FromArgb(0x00, 0, 0, 0), 1));
-        brush.Freeze();
-        return brush;
-    }
 
     private static RadialGradientBrush CreatePressGlowBrush(double dx, double dy)
     {
@@ -398,4 +516,18 @@ public sealed class GlassLiquidInteractionAnimator
         brush.Freeze();
         return brush;
     }
+
+    private static T? FindAncestor<T>(DependencyObject? node) where T : DependencyObject
+    {
+        while (node != null)
+        {
+            if (node is T match)
+                return match;
+
+            node = VisualTreeHelper.GetParent(node) ?? LogicalTreeHelper.GetParent(node);
+        }
+
+        return null;
+    }
 }
+

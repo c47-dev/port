@@ -75,9 +75,11 @@
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
+                    <!-- ClipToBounds=False: GlassRoundButton hover scale (PART_Outer) may exceed 32×32 -->
                     <Grid Grid.Row="0"
                           Margin="{StaticResource Glass.Align.ChromeGutter}"
-                          Height="{StaticResource Glass.Metrics.ChromeRowHeight}">
+                          Height="{StaticResource Glass.Metrics.ChromeRowHeight}"
+                          ClipToBounds="False">
                         <Grid.Style>
                             <Style TargetType="Grid">
                                 <Setter Property="Visibility" Value="Visible"/>
@@ -198,13 +200,13 @@
                                 Background="Transparent"/>
                     </Grid>
 
-                    <ScrollViewer Grid.Row="1"
-                                  Margin="12,0,12,8"
-                                  Height="36"
-                                  HorizontalScrollBarVisibility="Hidden"
-                                  VerticalScrollBarVisibility="Disabled">
-                        <ScrollViewer.Style>
-                            <Style TargetType="ScrollViewer">
+                    <!-- ClipToBounds=False: GlassPaneTabButton hover scale (~1.14) paints outside 32×32 layout slot -->
+                    <Grid Grid.Row="1"
+                          Margin="12,0,12,8"
+                          Height="{StaticResource Glass.Metrics.TabHeight}"
+                          ClipToBounds="False">
+                        <Grid.Style>
+                            <Style TargetType="Grid">
                                 <Setter Property="Visibility" Value="Visible"/>
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding PopupSurface}" Value="{x:Static models:PopupSurface.Settings}">
@@ -215,20 +217,22 @@
                                     </DataTrigger>
                                 </Style.Triggers>
                             </Style>
-                        </ScrollViewer.Style>
-                        <StackPanel Orientation="Horizontal" Margin="0,2,0,2" VerticalAlignment="Center">
-                            <Button x:Name="LocalPaneTabButton"
-                                    Style="{StaticResource GlassPaneTabLocal}"
-                                    Command="{Binding SelectPaneCommand}"
-                                    CommandParameter="{x:Static models:PortPane.Local}"
-                                    Click="PaneTab_Click"/>
-                            <Button x:Name="DockerPaneTabButton"
-                                    Style="{StaticResource GlassPaneTabDocker}"
-                                    Command="{Binding SelectPaneCommand}"
-                                    CommandParameter="{x:Static models:PortPane.Docker}"
-                                    Click="PaneTab_Click"/>
+                        </Grid.Style>
+                        <StackPanel Orientation="Horizontal"
+                                    VerticalAlignment="Center"
+                                    ClipToBounds="False">
+                            <controls:GlassPaneTabButton x:Name="LocalPaneTabButton"
+                                                         Style="{StaticResource GlassPaneTabLocal}"
+                                                         Command="{Binding SelectPaneCommand}"
+                                                         CommandParameter="{x:Static models:PortPane.Local}"
+                                                         Click="PaneTab_Click"/>
+                            <controls:GlassPaneTabButton x:Name="DockerPaneTabButton"
+                                                         Style="{StaticResource GlassPaneTabDocker}"
+                                                         Command="{Binding SelectPaneCommand}"
+                                                         CommandParameter="{x:Static models:PortPane.Docker}"
+                                                         Click="PaneTab_Click"/>
                         </StackPanel>
-                    </ScrollViewer>
+                    </Grid>
 
                     <Grid x:Name="ListHostGrid"
                           Grid.Row="2"
@@ -385,7 +389,8 @@
                             <Border Style="{StaticResource GlassSectionCardBorder}">
                                 <StackPanel>
                                     <Grid Margin="8,4,8,4"
-                                          MinHeight="{StaticResource Glass.Metrics.ChromeRowHeight}">
+                                          MinHeight="{StaticResource Glass.Metrics.ChromeRowHeight}"
+                                          ClipToBounds="False">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="Auto"/>
                                             <ColumnDefinition Width="Auto"/>
@@ -414,14 +419,12 @@
                                                      Text="{Binding ExcludedPortInput, UpdateSourceTrigger=PropertyChanged}"
                                                      KeyDown="ExcludedPortInput_KeyDown"/>
                                         </Border>
-                                        <Button Grid.Column="3"
-                                                Command="{Binding AddExcludedPortCommand}"
-                                                Style="{StaticResource GlassCapsuleActionButton}"
-                                                VerticalAlignment="Center">
+                                        <controls:GlassPillButton Grid.Column="3"
+                                                                  Command="{Binding AddExcludedPortCommand}"
+                                                                  VerticalAlignment="Center">
                                             <TextBlock Text="Add"
-                                                       Style="{StaticResource GlassTextPrimaryShadow}"
-                                                       FontWeight="SemiBold"/>
-                                        </Button>
+                                                       Style="{StaticResource GlassTextPrimaryShadow}"/>
+                                        </controls:GlassPillButton>
                                     </Grid>
 
                                     <Border Style="{StaticResource GlassSectionDivider}"/>

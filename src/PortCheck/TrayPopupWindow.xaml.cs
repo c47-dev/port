@@ -86,8 +86,13 @@ public partial class TrayPopupWindow : Window
 
     private void PaneTab_Click(object sender, RoutedEventArgs e)
     {
-        if (sender is FrameworkElement element)
-            FluidAnimation.PopIcon(element);
+        if (sender is not Button tab)
+            return;
+
+        var popTarget = tab.Template?.FindName("TabIcon", tab) as FrameworkElement
+            ?? tab.Template?.FindName("TabIconPopTarget", tab) as FrameworkElement;
+        if (popTarget != null)
+            FluidAnimation.PopIcon(popTarget);
     }
 
     private void AnimatePaneChange(PortPane pane)

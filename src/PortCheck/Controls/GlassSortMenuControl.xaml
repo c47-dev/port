@@ -5,19 +5,19 @@
     <StackPanel>
         <Button x:Name="PortSortButton"
                 Click="SortFieldButton_Click"
-                Style="{StaticResource GlassPopupMenuButton}"/>
+                Style="{StaticResource GlassSortMenuItem}"/>
         <Button x:Name="ProcessNameSortButton"
                 Click="SortFieldButton_Click"
-                Style="{StaticResource GlassPopupMenuButton}"/>
+                Style="{StaticResource GlassSortMenuItem}"/>
         <Button x:Name="PidSortButton"
                 Click="SortFieldButton_Click"
-                Style="{StaticResource GlassPopupMenuButton}"/>
-        <Border Style="{StaticResource GlassDivider}"/>
+                Style="{StaticResource GlassSortMenuItem}"/>
+        <Border Style="{StaticResource GlassSectionDivider}" Margin="8,4,8,4"/>
         <Button x:Name="AscendingButton"
                 Click="SortOrderButton_Click"
-                Style="{StaticResource GlassPopupMenuButton}"/>
+                Style="{StaticResource GlassSortMenuItem}"/>
         <Button x:Name="DescendingButton"
                 Click="SortOrderButton_Click"
-                Style="{StaticResource GlassPopupMenuButton}"/>
+                Style="{StaticResource GlassSortMenuItem}"/>
     </StackPanel>
 </UserControl>

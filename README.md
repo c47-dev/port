@@ -56,11 +56,32 @@ dotnet publish -c Release -r win-x64 /p:PublishSingleFile=true
 
 **Output folder:** `bin/Release/net8.0-windows/win-x64/publish/`
 
-| File | Required |
+### Run the published app
+
+1. Use the **entire `publish` folder** (do not copy only `PortCheck.exe`).
+2. Double-click `PortCheck.exe` (or run from that folder in PowerShell).
+3. Approve the **UAC elevation** prompt — Release builds use `requireAdministrator` in `app.manifest` so process kill works.
+
+```powershell
+cd src\PortCheck\bin\Release\net8.0-windows\win-x64\publish
+.\PortCheck.exe
+```
+
+| Path (beside `PortCheck.exe`) | Required |
 |------|----------|
 | `PortCheck.exe` | Yes |
-| `appsettings.json` | Yes (beside exe; not embedded in single-file) |
+| `appsettings.json` | Yes (not embedded in single-file) |
+| `Config/protected-ports.json` | Yes — app exits if missing |
 | `Assets/AppIcon.ico` | Yes (tray icon; falls back to exe icon if missing) |
+
+### Publish troubleshooting
+
+| Symptom | Cause | Fix |
+|--------|--------|-----|
+| PowerShell `&&` error | Invalid in Windows PowerShell 5.x | Use `;` between commands, or run commands on separate lines |
+| “Access denied” / exe won’t start | Release requires elevation | Approve UAC, or right-click **Run as administrator** |
+| Message about `protected-ports.json` | Only the `.exe` was copied | Distribute the full `publish` folder including `Config\` |
+| Tray appears then error on popup | Rare GPU/shader issue | Motion falls back without lens shader; rebuild from latest source |
 
 Distribute the **whole `publish` folder**, not only `PortCheck.exe`.
 

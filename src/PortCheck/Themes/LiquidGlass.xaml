@@ -152,27 +152,28 @@
         </Style.Triggers>
     </Style>
 
-    <!-- 32×32 circular chrome: Controls.GlassRoundButton + Themes/GlassRoundButton.xaml -->
+    <!-- Liquid chrome family: GlassChrome.xaml + GlassRoundButton / GlassPillButton (not styles below). -->
 
     <!-- Popup chrome: use Controls.GlassPopupShell (tint + sheen + rim + captured blur). -->
-    <Style x:Key="GlassPopupMenuShell" TargetType="Border">
+    <!-- Sort/filter popup: port-list low-light blur (single soft edge, no rim/sheen stack). -->
+    <Style x:Key="GlassSortMenuShell" TargetType="Border">
         <Setter Property="Background" Value="Transparent"/>
-        <Setter Property="BorderBrush" Value="{StaticResource Glass.RimLight}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource Glass.List.Surface.Border}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="CornerRadius" Value="{StaticResource Glass.Metrics.PopupMenuCornerRadius}"/>
         <Setter Property="Padding" Value="{StaticResource Glass.Metrics.PopupMenuPadding}"/>
         <Setter Property="MinWidth" Value="168"/>
         <Setter Property="SnapsToDevicePixels" Value="True"/>
-        <Setter Property="Effect" Value="{StaticResource Glass.WindowShadow}"/>
     </Style>
 
-    <Style x:Key="GlassPopupMenuButton" TargetType="Button">
+    <!-- Sort menu rows: same hover/selection as GlassPortListItem (Hover.Surface, no stroke). -->
+    <Style x:Key="GlassSortMenuItem" TargetType="Button">
         <Setter Property="Background" Value="Transparent"/>
         <Setter Property="BorderThickness" Value="0"/>
         <Setter Property="Foreground" Value="{StaticResource Text.Primary}"/>
         <Setter Property="FontSize" Value="12"/>
         <Setter Property="Padding" Value="0"/>
-        <Setter Property="Margin" Value="0"/>
+        <Setter Property="Margin" Value="0,0,0,2"/>
         <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
@@ -182,9 +183,9 @@
                     <Border x:Name="Bd"
                             Background="Transparent"
                             BorderBrush="Transparent"
-                            BorderThickness="1"
-                            Padding="{StaticResource Glass.Metrics.PopupMenuItemPadding}"
-                            CornerRadius="{StaticResource Glass.Metrics.PopupMenuItemCornerRadius}"
+                            BorderThickness="0"
+                            Padding="8,4"
+                            CornerRadius="{StaticResource Glass.Metrics.ListHoverRadius}"
                             SnapsToDevicePixels="True">
                         <ContentPresenter HorizontalAlignment="Stretch" VerticalAlignment="Center"/>
                     </Border>
@@ -193,9 +194,7 @@
                             <Setter TargetName="Bd" Property="Background" Value="{StaticResource Hover.Surface}"/>
                         </Trigger>
                         <Trigger Property="Tag" Value="Selected">
-                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource PaneTab.Active.Fill}"/>
-                            <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource PaneTab.Active.Stroke}"/>
-                            <Setter TargetName="Bd" Property="BorderThickness" Value="1"/>
+                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource Hover.Surface}"/>
                             <Setter Property="FontWeight" Value="SemiBold"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
@@ -211,6 +210,7 @@
         <Setter Property="Background" Value="{StaticResource Glass.Stroke}"/>
     </Style>
 
+    <!-- Legacy static capsule; prefer Controls.GlassPillButton + Themes/GlassPillButton.xaml -->
     <Style x:Key="GlassCapsuleActionButton" TargetType="Button">
         <Setter Property="MinWidth" Value="68"/>
         <Setter Property="Height" Value="{StaticResource Glass.Metrics.ChromeRowHeight}"/>
@@ -481,114 +481,7 @@
         </Setter>
     </Style>
 
-    <!-- iOS 18 Mail Smart Categories: idle circle → active frosted-glass pill -->
-    <Style x:Key="GlassPaneTabBase" TargetType="Button">
-        <Setter Property="Height" Value="{StaticResource Glass.Metrics.TabHeight}"/>
-        <Setter Property="Width" Value="{StaticResource Glass.Metrics.TabIconSlotWidth}"/>
-        <Setter Property="MinWidth" Value="{StaticResource Glass.Metrics.TabIconSlotWidth}"/>
-        <Setter Property="Padding" Value="0"/>
-        <Setter Property="Margin" Value="0,0,8,0"/>
-        <Setter Property="BorderThickness" Value="0"/>
-        <Setter Property="Cursor" Value="Hand"/>
-        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
-        <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
-        <Setter Property="HorizontalAlignment" Value="Left"/>
-        <Setter Property="VerticalAlignment" Value="Center"/>
-    </Style>
-
-    <Style x:Key="GlassPaneTabLocal" TargetType="Button" BasedOn="{StaticResource GlassPaneTabBase}">
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="Button">
-                    <Border x:Name="Shell"
-                            CornerRadius="{StaticResource Glass.Metrics.TabCornerRadius}"
-                            Height="{StaticResource Glass.Metrics.TabHeight}"
-                            Width="{TemplateBinding Width}"
-                            Background="{StaticResource PaneTab.Idle.Fill}"
-                            BorderBrush="#45FFFFFF" BorderThickness="1"
-                            SnapsToDevicePixels="True" UseLayoutRounding="True" ClipToBounds="True">
-                        <Grid VerticalAlignment="Center">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="{StaticResource Glass.Metrics.TabIconSlot}"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock x:Name="TabIcon" Grid.Column="0" Text="&#xE7F8;"
-                                       FontFamily="Segoe Fluent Icons" FontSize="15"
-                                       Foreground="{StaticResource Text.Secondary}"
-                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                            <TextBlock x:Name="Label" Grid.Column="1" Text="Local Port"
-                                       Visibility="Collapsed" Opacity="0"
-                                       FontSize="12" FontWeight="SemiBold"
-                                       Foreground="{StaticResource Text.Primary}"
-                                       Margin="{StaticResource Glass.Metrics.TabLabelTrailing}"
-                                       VerticalAlignment="Center"/>
-                        </Grid>
-                    </Border>
-                    <ControlTemplate.Triggers>
-                        <DataTrigger Binding="{Binding ActivePane}" Value="{x:Static models:PortPane.Local}">
-                            <Setter TargetName="Shell" Property="Background" Value="{StaticResource PaneTab.Active.Fill}"/>
-                            <Setter TargetName="Shell" Property="BorderBrush" Value="{StaticResource PaneTab.Active.Stroke}"/>
-                            <Setter TargetName="Label" Property="Visibility" Value="Visible"/>
-                            <Setter TargetName="Label" Property="Opacity" Value="1"/>
-                            <Setter TargetName="Label" Property="Margin" Value="4,0,8,0"/>
-                            <Setter TargetName="TabIcon" Property="Foreground" Value="{StaticResource Text.Primary}"/>
-                        </DataTrigger>
-                        <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Shell" Property="Background" Value="#40FFFFFF"/>
-                        </Trigger>
-                    </ControlTemplate.Triggers>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-    </Style>
-
-    <Style x:Key="GlassPaneTabDocker" TargetType="Button" BasedOn="{StaticResource GlassPaneTabBase}">
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="Button">
-                    <Border x:Name="Shell"
-                            CornerRadius="{StaticResource Glass.Metrics.TabCornerRadius}"
-                            Height="{StaticResource Glass.Metrics.TabHeight}"
-                            Width="{TemplateBinding Width}"
-                            Background="{StaticResource PaneTab.Idle.Fill}"
-                            BorderBrush="#45FFFFFF" BorderThickness="1"
-                            SnapsToDevicePixels="True" UseLayoutRounding="True" ClipToBounds="True">
-                        <Grid VerticalAlignment="Center">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="{StaticResource Glass.Metrics.TabIconSlot}"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <Viewbox Grid.Column="0"
-                                     Width="{StaticResource Glass.Metrics.DockerMarkWidth}"
-                                     Height="{StaticResource Glass.Metrics.DockerMarkHeight}"
-                                     HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="Uniform">
-                                <Path Data="{x:Static helpers:DockerIconGeometry.Logo}"
-                                      Fill="{StaticResource PaneTab.Docker.Accent}"/>
-                            </Viewbox>
-                            <TextBlock x:Name="Label" Grid.Column="1" Text="Docker Port"
-                                       Visibility="Collapsed" Opacity="0"
-                                       FontSize="12" FontWeight="SemiBold"
-                                       Foreground="{StaticResource Text.Primary}"
-                                       Margin="{StaticResource Glass.Metrics.TabLabelTrailing}"
-                                       VerticalAlignment="Center"/>
-                        </Grid>
-                    </Border>
-                    <ControlTemplate.Triggers>
-                        <DataTrigger Binding="{Binding ActivePane}" Value="{x:Static models:PortPane.Docker}">
-                            <Setter TargetName="Shell" Property="Background" Value="{StaticResource PaneTab.Active.Fill}"/>
-                            <Setter TargetName="Shell" Property="BorderBrush" Value="{StaticResource PaneTab.Active.Stroke}"/>
-                            <Setter TargetName="Label" Property="Visibility" Value="Visible"/>
-                            <Setter TargetName="Label" Property="Opacity" Value="1"/>
-                            <Setter TargetName="Label" Property="Margin" Value="4,0,8,0"/>
-                        </DataTrigger>
-                        <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Shell" Property="Background" Value="#40FFFFFF"/>
-                        </Trigger>
-                    </ControlTemplate.Triggers>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-    </Style>
+    <!-- Pane tabs: Controls.GlassPaneTabButton + Themes/GlassPaneTabButton.xaml (hover-only chrome). -->
 
     <!-- List row: idle flat; hover/selected use Hover.Surface (Local + Docker panes). -->
     <Style x:Key="GlassPortListItem" TargetType="ListBoxItem">
