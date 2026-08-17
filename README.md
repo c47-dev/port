@@ -1,6 +1,6 @@
 # PortCheck
 
-<video src="https://github.com/c47-dev/port/raw/refs/heads/main/docs/assets/portcheck-hero.mp4" autoplay loop muted playsinline controls preload="metadata" width="960"></video>
+[![PortCheck hero demo](docs/assets/portcheck-hero.gif)](docs/assets/portcheck-hero.mp4)
 
 PortCheck is a focused Windows tray app for seeing every listening TCP port in one liquid-glass command surface. Search by port, process, or PID; favourite important ports; inspect local and Docker mappings; and stop the process that owns a port without opening Task Manager or Docker Desktop. Docker integration is read-only until you explicitly choose **Kill** (`docker stop` for containers), and PortCheck never starts or installs Docker.
 
